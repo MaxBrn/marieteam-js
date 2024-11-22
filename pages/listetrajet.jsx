@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function listeTrajet() {
+export default function ListeTrajet() {
     const n = 10;  // Nombre total de trajets (affichés dans la liste)
 
     // Liste des trajets avec des données fictives
