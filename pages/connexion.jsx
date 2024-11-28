@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import Cookies from 'js-cookie';  // Importez js-cookie pour gérer les cookies
+import { supabase } from '@/lib/supabase';  // Assurez-vous que vous avez bien configuré le client Supabase
 import Link from 'next/link';
+import Cookies from 'js-cookie';
+
 const LoginPage = () => {
   const [mail, setMail] = useState('');
   const [mdp, setMdp] = useState('');
@@ -15,24 +17,32 @@ const LoginPage = () => {
     setLoading(true);
     setMessage('');
 
-    const response = await fetch('/api/connexionAPI', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ mail, mdp }),
-    });
+    try {
+      // Appel à Supabase pour se connecter avec l'email et le mot de passe
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: mail,
+        password: mdp,
+      });
 
-    const data = await response.json();
-    setLoading(false);
+      setLoading(false);
 
-    if (response.ok) {
-      // Si la connexion est réussie, stocker le token JWT dans un cookie
-      Cookies.set('token', data.token, { expires: 1, secure: true, path: '/' });
+      if (error) {
+        setMessage(error.message || 'Erreur de connexion.');
+        return;
+      }
+
+      // Si la connexion est réussie, récupérer le token JWT de Supabase
+      const token = await data.session.access_token;
+
+      // Stocker le token dans un cookie
+      Cookies.set('token', token, { expires: 1, secure: true, path: '/' });
+
+      // Rediriger l'utilisateur vers la page d'accueil
       router.push('/');
-      window.location.reload;
-    } else {
-      setMessage(data.message || 'Erreur de connexion.');
+      window.location.reload(); // Recharger la page pour s'assurer que le token est pris en compte
+    } catch (error) {
+      setLoading(false);
+      setMessage('Une erreur est survenue.');
     }
   };
 

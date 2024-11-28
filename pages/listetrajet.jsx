@@ -2,78 +2,71 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 export default function ListeTrajet() {
-    const n = 10;  // Nombre total de trajets (affichés dans la liste)
-
-    // Liste des trajets avec des données fictives
-    const trajetList = new Array(n).fill(null).map((_, index) => ({
-        id: index + 1,
-        heureDepart: '10h',
-        heureArrivee: '11h',
-        numeroBateau: `Bateau N°${index + 123456}`,
-        placesPassager: 100,
-        placesVehiculeInf2m: 15,
-        placesVehiculeSup2m: 10,
-    }));
-
-    // État pour gérer la div sélectionnée
+    // Liste des trajets récupérés
+    const [trajetList, setTrajetList] = useState([]);
     const [selectedTrajet, setSelectedTrajet] = useState(null);
-
-    const handleClick = (trajet) => {
-        setSelectedTrajet(trajet);
-    };
     const [depart, setDepart] = useState('');
     const [arrivee, setArrivee] = useState('');
     const [date, setDate] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
 
+    // Fonction pour afficher les détails d'un trajet
+    const handleClick = (trajet) => {
+        setSelectedTrajet(trajet);
+    };
+
+    // Fonction pour gérer la soumission du formulaire
     const handleSubmit = async (e) => {
-        e.preventDefault();
-
+        e.preventDefault(); // Empêche le rafraîchissement de la page
+        const dateFormat = date.substring(8,10)+'-'+date.substring(5,7)+'-'+date.substring(0,4);
         setLoading(true);
         setMessage('');
-
+    
         const response = await fetch('/api/rechercheTrajetAPI', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ depart, arrivee,date }),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ depart, arrivee, dateFormat}),
         });
-
+    
         const data = await response.json();
         setLoading(false);
-
+    
         if (response.ok) {
-        // Si la connexion est réussie, stocker le token JWT dans un cookie
-        Cookies.set('token', data.token, { expires: 1, secure: true, path: '/' });
-        router.push('/');
-        window.location.reload;
+            setTrajetList(data.trajets); // Met à jour la liste des trajets récupérés
         } else {
-        setMessage(data.message || 'Erreur de connexion.');
+            setMessage(data.message); // Affiche un message d'erreur
         }
     };
     
-
     return (
         <>
             <div className="py-16 w-9/12 m-auto">
                 <div>
-                    <form className="w-1/2 m-auto mb-10">
+                    <form className="w-1/2 m-auto mb-10" onSubmit={handleSubmit}>
                         <input
                             id="depart"
                             type="text"
                             placeholder={"Saisir un départ"}
+                            value={depart} // Liaison avec l'état
+                            onChange={(e) => setDepart(e.target.value)} // Met à jour l'état
                             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                             id="arrivee"
                             type="text"
                             placeholder={"Saisir une arrivée"}
+                            value={arrivee} // Liaison avec l'état
+                            onChange={(e) => setArrivee(e.target.value)} // Met à jour l'état
                             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                             id="date"
                             type="date"
-                            placeholder={"Saisir une date"}
+                            value={date} // Liaison avec l'état
+                            onChange={(e) => setDate(e.target.value)} // Met à jour l'état
                             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
@@ -109,7 +102,7 @@ export default function ListeTrajet() {
                                     <p>{trajet.heureDepart}<br />{trajet.heureArrivee}</p>
                                 </div>
                                 <div className="w-[90%] pl-5 m-auto">
-                                    <p>{trajet.numeroBateau}</p>
+                                    <p>{trajet.idBateau}</p>
                                 </div>
                             </div>
                         ))}
@@ -131,14 +124,14 @@ export default function ListeTrajet() {
                                 </div>
                                 <div className="pt-5">
                                     <p>
-                                        {selectedTrajet.numeroBateau} <br/>
+                                        {selectedTrajet.idBateau} <br/>
                                         Places disponibles:<br/>
                                     </p>
                                 
                                     <ul className='pl-2 border-l border-black'>
-                                        <li>Place passager: {selectedTrajet.placesPassager}</li>
-                                        <li>Place véhicule inférieur à 2m: {selectedTrajet.placesVehiculeInf2m}</li>
-                                        <li>Place véhicule supérieur à 2m: {selectedTrajet.placesVehiculeSup2m}</li>
+                                        <li>Place passager: </li>
+                                        <li>Place véhicule inférieur à 2m:</li>
+                                        <li>Place véhicule supérieur à 2m: </li>
                                     </ul>
                                 </div>
                             </>

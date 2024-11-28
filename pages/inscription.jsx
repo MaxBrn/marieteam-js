@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router'; // Utilisé pour la navigation après inscription
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';  // Assurez-vous d'importer le client Supabase configuré
+
 const RegisterPage = () => {
   // State pour chaque champ du formulaire
   const [nom, setNom] = useState('');
@@ -26,25 +28,32 @@ const RegisterPage = () => {
     setLoading(true);
     setMessage('');
 
-    // Envoyer la requête POST à l'API
-    const response = await fetch('/api/inscriptionAPI', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nom, prenom, mail, mdp }),
-    });
+    try {
+      // Appel à Supabase pour créer un utilisateur
+      const { user, error } = await supabase.auth.signUp({
+        email: mail,
+        password: mdp,
+        options: {
+          data: {
+            nom: nom,
+            prenom: prenom,
+          }
+        }
+      });
 
-    const data = await response.json();
+      setLoading(false);
 
-    setLoading(false);
+      if (error) {
+        setMessage(error.message || 'Une erreur est survenue.');
+        return;
+      }
 
-    if (response.ok) {
-      // Si l'inscription est réussie, rediriger l'utilisateur vers la page de connexion
+      // Si tout est OK, rediriger l'utilisateur vers la page de connexion
       router.push('/connexion');
-    } else {
-      // Afficher le message d'erreur si l'inscription échoue
-      setMessage(data.message || 'Une erreur est survenue.');
+    } catch (error) {
+      setLoading(false);
+      setMessage('Une erreur est survenue.');
+      console.log(error);
     }
   };
 
@@ -67,7 +76,7 @@ const RegisterPage = () => {
             />
           </div>
           <div>
-            <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">Prenom</label>
+            <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">Prénom</label>
             <input
               id="prenom"
               type="text"
@@ -127,7 +136,7 @@ const RegisterPage = () => {
         <div className="text-center mt-4">
           <p>
             Vous avez déjà un compte ?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline">Connectez-vous</Link>
+            <Link href="/connexion" className="text-blue-600 hover:underline">Connectez-vous</Link>
           </p>
         </div>
       </div>

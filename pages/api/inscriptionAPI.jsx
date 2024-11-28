@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { promisePool } from '@/lib/db'; // Assurez-vous que vous avez correctement configuré votre pool MySQL
-import bcrypt from 'bcryptjs'; // Pour hasher les mots de passe
+import { supabase } from '@/lib/supabase'; // Assurez-vous que vous avez correctement configuré votre client Supabase
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -12,39 +11,59 @@ export default async function handler(req, res) {
     }
 
     try {
-      // Vérifier si l'email est déjà utilisé
-      const [result] = await promisePool.query('SELECT * FROM compte WHERE mail = ?', [mail]);
+      // Vérifier si l'email est déjà utilisé via Supabase
+      const { data, error } = await supabase
+        .from('compte')
+        .select('mail')
+        .eq('mail', mail)
+        .single();
 
-      // Si result est un tableau (pour une requête SELECT), on vérifie la longueur
-      if (Array.isArray(result)) {
-        if (result.length > 0) {
-          return res.status(409).json({ message: 'Cet email est déjà utilisé' });
-        }
-      } else {
-        // Si result n'est pas un tableau (cas d'une autre requête comme INSERT, UPDATE)
-        console.log(result);
+      if (error && error.code !== 'PGRST116') { // PGRST116 signifie "Aucune ligne trouvée"
+        console.error(error);
+        return res.status(500).json({ message: 'Erreur de vérification de l\'email' });
       }
 
-      // Hacher le mot de passe avant de le stocker
-      const hashedPassword = await bcrypt.hash(mdp, 10);
+      if (data) {
+        return res.status(409).json({ message: 'Cet email est déjà utilisé' });
+      }
 
-      // Générer un ID unique pour l'utilisateur
-      const userId = 'user_' + Date.now(); // Par exemple, un ID basé sur le timestamp
+      // Créer un nouvel utilisateur dans Supabase (authentification)
+      const { user, signupError } = await supabase.auth.signUp({
+        email: mail,
+        password: mdp,
+      });
 
-      // Insérer l'utilisateur dans la base de données
-      const [insertResult] = await promisePool.query(
-        'INSERT INTO compte (prenom, nom, mail, mdp) VALUES (?, ?, ?, ?)',
-        [prenom, nom, mail, hashedPassword]
-      );
+      if (signupError) {
+        console.error(signupError);
+        return res.status(500).json({ message: 'Erreur lors de la création de l\'utilisateur' });
+      }
+
+      // Ajouter des informations supplémentaires à la table "compte" (prénom, nom)
+      const { error: insertError } = await supabase
+        .from('compte')
+        .insert([
+          {
+            id: user.id,  // L'ID utilisateur généré par Supabase
+            prenom,
+            nom,
+            mail,
+          }
+        ]);
+
+      if (insertError) {
+        console.error(insertError);
+        return res.status(500).json({ message: 'Erreur lors de l\'enregistrement des informations utilisateur' });
+      }
 
       // Retourner une réponse de succès
-      return res.status(201).json({ message: 'Utilisateur créé avec succès', userId: userId });
+      return res.status(201).json({ message: 'Utilisateur créé avec succès', userId: user.id });
+
     } catch (error) {
-      console.error(error);
+      console.error('Erreur lors de l\'inscription:', error);
       return res.status(500).json({ message: 'Erreur lors de l\'inscription' });
     }
   } else {
-    res.status(405).json({ message: 'Méthode non autorisée' });
+    // Si la méthode HTTP n'est pas POST
+    return res.status(405).json({ message: 'Méthode non autorisée' });
   }
 }
-
