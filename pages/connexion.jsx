@@ -35,7 +35,7 @@ const LoginPage = () => {
       const token = await data.session.access_token;
 
       // Stocker le token dans un cookie
-      Cookies.set('token', token, { expires: 1, secure: true, path: '/' });
+      Cookies.set('token', token, { expires: 1, path: '/' });
 
       // Rediriger l'utilisateur vers la page d'accueil
       router.push('/');
