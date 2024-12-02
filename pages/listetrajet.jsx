@@ -167,8 +167,19 @@ export default function ListeTrajet() {
         </button>
       </form>
       {message && <p className="text-red-500">{message}</p>}
-      <div className="mt-8 flex">
-        <div className="w-2/3 overflow-y-auto max-h-[400px] pr-4">
+
+      <div className="flex">
+        <div
+            className="flex flex-col w-2/3 overflow-y-auto max-h-[400px] pr-4
+            [&::-webkit-scrollbar]:w-1
+            [&::-webkit-scrollbar-track]:rounded-full
+            [&::-webkit-scrollbar-track]:bg-gray-100
+            [&::-webkit-scrollbar-thumb]:rounded-full
+            [&::-webkit-scrollbar-thumb]:bg-gray-300 mr-40 snap-y gap-y-10"
+            style={{
+              height: '275px',
+            }}
+          >
           {trajetList.map((trajet) => (
             <div
               key={trajet.id}
