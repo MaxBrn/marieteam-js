@@ -97,6 +97,15 @@ export default function ListeTrajet() {
             console.error('Erreur lors de la récupération du bateau pour le trajet', trajet.id);
             return { ...trajet, nomBateau: 'Inconnu' };
           }
+
+          const {data: reservation, error:errorReservation} = await supabase
+            .from('reservation')
+            .select('num')
+            .eq('idTrajet',trajet.num);
+
+          console.log(reservation);
+          
+
           
           const {data: placePassager, error: errorPassager} = await supabase
             .from('contenir')
