@@ -98,20 +98,38 @@ export default function ListeTrajet() {
             return { ...trajet, nomBateau: 'Inconnu' };
           }
           
-          const {data: placePassager, error: errorPlace} = await supabase
+          const {data: placePassager, error: errorPassager} = await supabase
             .from('contenir')
             .select('capacite')
             .eq('idBateau',trajet.idBateau)
             .eq('idPlace','A')
             .single();
 
+          const {data: placePetitVehicule, error: errorPetitVehicule} = await supabase
+            .from('contenir')
+            .select('capacite')
+            .eq('idBateau',trajet.idBateau)
+            .eq('idPlace','B')
+            .single();
+
+          const {data: placeGrandVehicule, error: errorGrandVehicule} = await supabase
+            .from('contenir')
+            .select('capacite')
+            .eq('idBateau', trajet.idBateau)
+            .eq('idPlace','C')
+            .single();
+
           // Calcul du temps de trajet
           const { hours, minutes } = calculerTempsTrajet(trajet.heureDepart, trajet.heureArrivee);
           if(hours > 0) {
-            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m`, portDepart: portDepart.nom, portArrivee: portArrivee.nom, placePassager: placePassager.capacite };
+            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m`, portDepart: portDepart.nom,
+             portArrivee: portArrivee.nom, placePassager: placePassager.capacite, placePetitVehicule: placePetitVehicule.capacite,
+             placeGrandVehicule: placeGrandVehicule.capacite };
           }
           else {
-            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m`, portDepart: portDepart.nom, portArrivee: portArrivee.nom, placePassager: placePassager.capacite };
+            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m`, portDepart: portDepart.nom, 
+            portArrivee: portArrivee.nom, placePassager: placePassager.capacite, placePetitVehicule: placePetitVehicule.capacite,
+            placeGrandVehicule: placeGrandVehicule.capacite };
           }
         })
       );
@@ -229,8 +247,8 @@ export default function ListeTrajet() {
                 </p>
                 <ul className="pl-2 border-l border-black">
                   <li>Place passager: {selectedTrajet.placePassager} </li>
-                  <li>Place véhicule inférieur à 2m:</li>
-                  <li>Place véhicule supérieur à 2m: </li>
+                  <li>Place véhicule inférieur à 2m: {selectedTrajet.placePetitVehicule}</li>
+                  <li>Place véhicule supérieur à 2m: {selectedTrajet.placeGrandVehicule}</li>
                 </ul>
               </div>
             </div>
