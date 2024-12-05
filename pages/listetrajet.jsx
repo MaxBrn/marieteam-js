@@ -83,6 +83,7 @@ export default function ListeTrajet() {
         throw new Error('Aucun trajet trouvé pour cette liaison et cette date');
       }
 
+
       // Recherche des informations sur les bateaux pour chaque trajet
       const trajetsAvecBateau = await Promise.all(
         trajets.map(async (trajet) => {
@@ -96,14 +97,39 @@ export default function ListeTrajet() {
             console.error('Erreur lors de la récupération du bateau pour le trajet', trajet.id);
             return { ...trajet, nomBateau: 'Inconnu' };
           }
+          
+          const {data: placePassager, error: errorPassager} = await supabase
+            .from('contenir')
+            .select('capacite')
+            .eq('idBateau',trajet.idBateau)
+            .eq('idPlace','A')
+            .single();
+
+          const {data: placePetitVehicule, error: errorPetitVehicule} = await supabase
+            .from('contenir')
+            .select('capacite')
+            .eq('idBateau',trajet.idBateau)
+            .eq('idPlace','B')
+            .single();
+
+          const {data: placeGrandVehicule, error: errorGrandVehicule} = await supabase
+            .from('contenir')
+            .select('capacite')
+            .eq('idBateau', trajet.idBateau)
+            .eq('idPlace','C')
+            .single();
 
           // Calcul du temps de trajet
           const { hours, minutes } = calculerTempsTrajet(trajet.heureDepart, trajet.heureArrivee);
           if(hours > 0) {
-            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m`, portDepart: portDepart.nom, portArrivee: portArrivee.nom };
+            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m`, portDepart: portDepart.nom,
+             portArrivee: portArrivee.nom, placePassager: placePassager.capacite, placePetitVehicule: placePetitVehicule.capacite,
+             placeGrandVehicule: placeGrandVehicule.capacite };
           }
           else {
-            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m`, portDepart: portDepart.nom, portArrivee: portArrivee.nom };
+            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m`, portDepart: portDepart.nom, 
+            portArrivee: portArrivee.nom, placePassager: placePassager.capacite, placePetitVehicule: placePetitVehicule.capacite,
+            placeGrandVehicule: placeGrandVehicule.capacite };
           }
         })
       );
@@ -220,9 +246,9 @@ export default function ListeTrajet() {
                   Places disponibles:<br/>
                 </p>
                 <ul className="pl-2 border-l border-black">
-                  <li>Place passager: </li>
-                  <li>Place véhicule inférieur à 2m:</li>
-                  <li>Place véhicule supérieur à 2m: </li>
+                  <li>Place passager: {selectedTrajet.placePassager} </li>
+                  <li>Place véhicule inférieur à 2m: {selectedTrajet.placePetitVehicule}</li>
+                  <li>Place véhicule supérieur à 2m: {selectedTrajet.placeGrandVehicule}</li>
                 </ul>
               </div>
             </div>
