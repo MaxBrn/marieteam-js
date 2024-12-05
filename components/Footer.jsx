@@ -14,7 +14,6 @@ export default function Footer() {
       </div>
       
       <div className="gap-10 flex mt-3 mb-3 ">
-        <Link href="/">Tarifs Liaisons</Link>
         <Link href="/listetrajet">Réserver Trajet</Link>
       </div>
 

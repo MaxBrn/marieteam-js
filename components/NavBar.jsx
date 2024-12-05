@@ -66,9 +66,6 @@ export default function NavBar() {
 
         <div className="flex gap-5 mr-10">
           <Link href="/listetrajet" className="font-bold text-lg">
-            Liaisons Tarifs
-          </Link>
-          <Link href="/listetrajet" className="font-bold text-lg">
             Réserver un trajet
           </Link>
 

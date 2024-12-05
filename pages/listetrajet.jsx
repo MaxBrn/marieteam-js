@@ -37,7 +37,7 @@ export default function ListeTrajet() {
       // Recherche du port de départ
       const { data: portDepart, error: errorPortDepart } = await supabase
         .from('port')
-        .select('id')
+        .select('id, nom')
         .ilike('nom', `%${depart}%`)
         .single();
 
@@ -48,7 +48,7 @@ export default function ListeTrajet() {
       // Recherche du port d'arrivée
       const { data: portArrivee, error: errorPortArrivee } = await supabase
         .from('port')
-        .select('id')
+        .select('id, nom')
         .ilike('nom', `%${arrivee}%`)
         .single();
 
@@ -100,10 +100,10 @@ export default function ListeTrajet() {
           // Calcul du temps de trajet
           const { hours, minutes } = calculerTempsTrajet(trajet.heureDepart, trajet.heureArrivee);
           if(hours > 0) {
-            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m` };
+            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m`, portDepart: portDepart.nom, portArrivee: portArrivee.nom };
           }
           else {
-            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m` };
+            return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m`, portDepart: portDepart.nom, portArrivee: portArrivee.nom };
           }
         })
       );
@@ -205,8 +205,8 @@ export default function ListeTrajet() {
             <div className="w-1/3 m-auto rounded-md bg-blue-50 p-3">
               <div>
                 <p>
-                  {selectedTrajet.heureDepart.substring(0,5)} - {depart} <br />
-                  {selectedTrajet.heureArrivee.substring(0,5)} - {arrivee}<br />
+                  {selectedTrajet.heureDepart.substring(0,5)} - {selectedTrajet.portDepart} <br />
+                  {selectedTrajet.heureArrivee.substring(0,5)} - {selectedTrajet.portArrivee}<br />
                 </p>
               </div>
               <div className="py-5 w-full border-b-4 border-white">
