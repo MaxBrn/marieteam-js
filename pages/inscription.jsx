@@ -126,7 +126,7 @@ const RegisterPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-4 bg-blue-900 text-white rounded-lg"
+              className="w-full py-2 px-4 bg-sky-900 text-white rounded-lg"
             >
               {loading ? 'Enregistrement...' : 'S\'inscrire'}
             </button>
@@ -136,7 +136,7 @@ const RegisterPage = () => {
         <div className="text-center mt-4">
           <p>
             Vous avez déjà un compte ?{' '}
-            <Link href="/connexion" className="text-blue-600 hover:underline">Connectez-vous</Link>
+            <Link href="/connexion" className="text-sky-900 hover:underline">Connectez-vous</Link>
           </p>
         </div>
       </div>
