@@ -8,7 +8,7 @@ export default function Home() {
                 <div className="flex justify-center">
                     <div className="w-1/2 p-12 text-s border-t border-l border-b border-slate-300 rounded-l-xl">
                         <p className="mt-5">
-                            Bienvenue à bord de MarieTeam, votre partenaire d’aventure en mer ! 
+                            Bienvenue à bord du navire Marieteam, votre partenaire d’aventure en mer ! 
                             Notre compagnie de croisière est dédiée à offrir des voyages uniques et inoubliables, alliant confort, élégance et exploration. 
                             Que vous rêviez de plages exotiques, de villes côtières historiques ou d’escapades sur des îles secrètes, nos navires vous amènent vers des horizons où chaque vague raconte une histoire.
                         </p>
