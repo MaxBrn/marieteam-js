@@ -90,7 +90,7 @@ const LoginPage = () => {
         <div className="text-center mt-4">
           <p>
             Pas encore de compte ?{' '}
-            <Link href="/inscription" className="bg-sky-900 hover:underline">S'inscrire</Link>
+            <Link href="/inscription" className="text-sky-900 hover:underline">S'inscrire</Link>
           </p>
         </div>
       </div>
