@@ -80,7 +80,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg"
+              className="w-full py-2 px-4 bg-sky-900 text-white rounded-lg"
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
