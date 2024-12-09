@@ -196,7 +196,7 @@ export default function ListeTrajet() {
         />
         <button
           type="submit"
-          className="block w-full px-4 py-2 bg-blue-500 text-white rounded-md"
+          className="block w-full px-4 py-2 bg-sky-900 text-white rounded-md"
         >
           {loading ? 'Recherche en cours...' : 'Rechercher'}
         </button>

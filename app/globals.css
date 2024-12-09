@@ -9,13 +9,13 @@
 
 
 @font-face {
-  font-family: 'Futura';
-  src: url('fonts/Futura\ Bold\ font.ttf') format('truetype');
-  font-weight: normal;
+  font-family: 'Cormorant';
+  src: url('fonts/CormorantNormal.ttf') format('truetype');
+  font-weight: bold;
   font-style: normal;
 }
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Futura', monospace;
+  font-family: 'Cormorant', monospace;
 }
