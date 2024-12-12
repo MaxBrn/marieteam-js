@@ -39,7 +39,6 @@ const LoginPage = () => {
 
       // Rediriger l'utilisateur vers la page d'accueil
       router.push('/');
-      window.location.reload(); // Recharger la page pour s'assurer que le token est pris en compte
     } catch (error) {
       setLoading(false);
       setMessage('Une erreur est survenue.');
