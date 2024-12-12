@@ -19,6 +19,7 @@ export default function Footer() {
 
       <div className="flex justify-between bg-blue-50 w-full py-2 px-4 rounded-b-xl">
         <Link href="/" className="ml-10">Copyright @ 2024 MarieTeam</Link>
+        <Link href="/https://urlr.me/fQRDuX" className="text-gray-300 cursor-default">     .        </Link>
         <Link href="/" className="mr-10">Mentions légales</Link>
       </div>
     </footer>
