@@ -245,9 +245,10 @@ export default function ListeTrajet() {
                 </p>
               </div>
               <div className="py-5 w-full border-b-4 border-white">
-                <Link href="/" className="p-3 bg-sky-900 rounded-xl text-white w-[80%] m-auto block text-center">
-                  Réserver ce trajet
-                </Link>
+              <Link href={`/reservation/${selectedTrajet.num}`} className="p-3 bg-sky-900 rounded-xl text-white w-[80%] m-auto block text-center">
+                Réserver ce trajet
+              </Link>
+
               </div>
               <div className="pt-5">
                 <p>
