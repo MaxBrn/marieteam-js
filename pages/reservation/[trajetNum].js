@@ -1,16 +1,73 @@
-'use client'
+'use client';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 
 export default function Reservation({ trajet }) {
   const router = useRouter();
+  const [formData, setFormData] = useState({
+    nom: '',
+    prenom: '',
+    adresse: '',
+    codePostal: '',
+    ville: '',
+    adulte: 0,
+    junior: 0,
+    enfant: 0,
+    voiture: 0,
+    camionnette: 0,
+    campingCar: 0,
+    camion: 0,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!trajet) {
     return <p>Chargement des données...</p>;
   }
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const { data, error } = await supabase.from('reservation').insert([
+        {
+          idTrajet: trajet.num,
+          nom: formData.nom,
+          prenom: formData.prenom,
+          adr: formData.adresse,
+          cp: formData.codePostal,
+          ville: formData.ville,
+        },
+      ]);
+
+      if (error) {
+        throw error;
+      }
+      // Redirection ou message de succès
+      alert('Réservation enregistrée avec succès !');
+      router.push('/index'); // Redirige vers une page des réservations, par exemple
+    } catch (error) {
+      console.error(error);
+      setErrorMessage('Une erreur est survenue lors de la réservation.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen py-16 ">
+    <div className="flex items-center justify-center min-h-screen py-16">
       <div className="w-full max-w-lg p-8 shadow-md rounded-lg bg-blue-50">
         <p className="text-lg font-bold mb-4">
           {trajet.portDepart} - {trajet.portArrivee}
@@ -18,131 +75,100 @@ export default function Reservation({ trajet }) {
         <p className="mb-4">
           le {trajet.dateFormat} de {trajet.heureDepartFormat} à {trajet.heureArriveeFormat}
         </p>
-        <form className="flex flex-col gap-6">
-          <div className='flex flex-col'>
-            <label htmlFor="adresse" className="w-1/4 text-gray-700">
-              Adresse
-            </label>
-            <input 
+        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+          {/* Champs de formulaire */}
+          <div className="flex">
+            <div className="w-1/2 flex flex-col">
+              <label htmlFor="nom" className="text-gray-700">Nom</label>
+              <input
+                type="text"
+                name="nom"
+                value={formData.nom}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="w-1/2 flex flex-col">
+              <label htmlFor="prenom" className="text-gray-700">Prénom</label>
+              <input
+                type="text"
+                name="prenom"
+                value={formData.prenom}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="adresse" className="text-gray-700">Adresse</label>
+            <input
               type="text"
               name="adresse"
-              className="w-4/4 p-2 border border-gray-300 rounded"
+              value={formData.adresse}
+              onChange={handleInputChange}
+              className="p-2 border border-gray-300 rounded"
+              required
             />
           </div>
-          <div className='flex'>
-            <div className='w-1/2 flex flex-col'>
-              <label htmlFor="codePostal" className="w-2/4 text-gray-700 mr-2">
-                Code Postal
-              </label>
-              <input 
+          <div className="flex">
+            <div className="w-1/2 flex flex-col">
+              <label htmlFor="codePostal" className="text-gray-700">Code Postal</label>
+              <input
                 type="text"
                 name="codePostal"
-                className="w-3/4 p-2 border border-gray-300 rounded"
+                value={formData.codePostal}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 rounded"
+                required
               />
             </div>
-            <div className='w-1/2 flex flex-col'>
-              <label htmlFor="ville" className="w-1/4 text-gray-700">
-                Ville
-              </label>
-              <input 
+            <div className="w-1/2 flex flex-col">
+              <label htmlFor="ville" className="text-gray-700">Ville</label>
+              <input
                 type="text"
                 name="ville"
-                className="w-3/4 p-2 border border-gray-300 rounded"
+                value={formData.ville}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 rounded"
+                required
               />
             </div>
-            
           </div>
-          
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="adulte" className="w-1/2 text-gray-700">
-              Adulte
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="adulte"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="junior" className="w-1/2 text-gray-700">
-              Junior
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="junior"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="enfant" className="w-1/2 text-gray-700">
-              Enfant
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="enfant"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="voiture" className="w-1/2 text-gray-700">
-              Voiture
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="voiture"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="camionnette" className="w-1/2 text-gray-700">
-              Camionnette
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="camionnette"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="campingCar" className="w-1/2 text-gray-700">
-              Camping Car
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="campingCar"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="camion" className="w-1/2 text-gray-700">
-              Camion
-            </label>
-            <p className="w-1/4 text-gray-500">50€</p>
-            <input
-              type="number"
-              name="camion"
-              className="w-1/4 p-2 border border-gray-300 rounded"
-            />
-          </div>
+          {/* Champs pour les réservations */}
+          {['adulte', 'junior', 'enfant', 'voiture', 'camionnette', 'campingCar', 'camion'].map((type) => (
+            <div className="flex items-center justify-between gap-4" key={type}>
+              <label htmlFor={type} className="text-gray-700 capitalize">{type}</label>
+              <p className="text-gray-500">50€</p>
+              <input
+                type="number"
+                name={type}
+                value={formData[type]}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 rounded"
+                min="0"
+              />
+            </div>
+          ))}
+          {/* Bouton de soumission */}
           <div className="flex justify-center mt-6">
             <button
               type="submit"
               className="px-6 py-2 bg-sky-900 text-white rounded-lg hover:bg-sky-800 transition"
+              disabled={isSubmitting}
             >
-              Réserver
+              {isSubmitting ? 'Envoi en cours...' : 'Réserver'}
             </button>
           </div>
+          {/* Message d'erreur */}
+          {errorMessage && <p className="text-red-500 mt-4">{errorMessage}</p>}
         </form>
       </div>
     </div>
   );
 }
+
 
 // Récupération des données côté serveur
 export async function getServerSideProps(context) {
@@ -238,6 +264,7 @@ export async function getServerSideProps(context) {
     props: {
       trajet: {
         ...trajet,
+        num: trajetNum,
         nomBateau: bateau.nom,
         tempsTrajet: `${hours}h ${minutes}m`,
         portDepart: portDepart.nom,

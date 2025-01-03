@@ -33,12 +33,7 @@ const RegisterPage = () => {
       const { user, error } = await supabase.auth.signUp({
         email: mail,
         password: mdp,
-        options: {
-          data: {
-            nom: nom,
-            prenom: prenom,
-          }
-        }
+        displayName: prenom+''+nom,
       });
 
       setLoading(false);
