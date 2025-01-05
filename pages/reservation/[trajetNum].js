@@ -2,9 +2,18 @@
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-
+import Cookie from "js-cookie";
+import Cookies from "js-cookie";
 export default function Reservation({ trajet }) {
+  
   const router = useRouter();
+  const tokenFromCookie = Cookie.get("token");
+  if(!tokenFromCookie) {
+    alert('Veuillez vous connecter !');
+    Cookies.set('resTrajet', trajet.num, { expires: 1, path: '/' });
+    router.push('/connexion');
+  }
+
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -56,12 +65,17 @@ export default function Reservation({ trajet }) {
     setErrorMessage('');
 
     try {
-      const numReservation = generateUniqueReservationNum("bd153536-79ab-4693-b3da-04795af326de")
+      
+      const { data: { user } } = await supabase.auth.getUser()
+
+      console.log(user);
+      const idUser = user.id;
+      const numReservation = generateUniqueReservationNum(idUser)
       const { data, error } = await supabase.from('reservation').insert([
         {
           num: numReservation,
           idTrajet: trajet.num,
-          idCompte: "bd153536-79ab-4693-b3da-04795af326de",
+          idCompte: idUser,
           nom: formData.nom,
           prenom: formData.prenom,
           adr: formData.adresse,

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabase';  // Assurez-vous que vous avez bien configuré le client Supabase
 import Link from 'next/link';
 import Cookies from 'js-cookie';
+import Cookie from 'js-cookie';
 
 const LoginPage = () => {
   const [mail, setMail] = useState('');
@@ -38,10 +39,19 @@ const LoginPage = () => {
       Cookies.set('token', token, { expires: 1, path: '/' });
 
       // Rediriger l'utilisateur vers la page d'accueil
-      router.push('/');
+      const reserveTrajet = Cookie.get('resTrajet');
+      if(reserveTrajet) {
+        router.push(`/reservation/${reserveTrajet}`);
+        Cookie.remove('resTrajet');
+      }
+      else {
+        router.push('/');
+      }
+      
     } catch (error) {
       setLoading(false);
       setMessage('Une erreur est survenue.');
+      console.log(error);
     }
   };
 
