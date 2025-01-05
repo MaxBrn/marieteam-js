@@ -20,6 +20,15 @@ export default function Reservation({ trajet }) {
     camion: 0,
   });
 
+  const types = [
+    { key: 'adulte', tarif: trajet.prix[0].tarif },
+    { key: 'junior',tarif: trajet.prix[1].tarif },
+    { key: 'enfant', tarif: trajet.prix[2].tarif},
+    { key: 'voiture', tarif: trajet.prix[3].tarif },
+    { key: 'camionnette', tarif: trajet.prix[4].tarif },
+    { key: 'campingCar', tarif: trajet.prix[5].tarif },
+    { key: 'camion', tarif: trajet.prix[6].tarif },
+  ];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -35,15 +44,24 @@ export default function Reservation({ trajet }) {
     }));
   };
 
+  const generateUniqueReservationNum = (idCompte) => {
+    const timestamp = Date.now(); // Obtenir le timestamp actuel
+    return `${idCompte}-${timestamp}`; // Combinaison du compte et du timestamp
+  };
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage('');
 
     try {
+      const numReservation = generateUniqueReservationNum("bd153536-79ab-4693-b3da-04795af326de")
       const { data, error } = await supabase.from('reservation').insert([
         {
+          num: numReservation,
           idTrajet: trajet.num,
+          idCompte: "bd153536-79ab-4693-b3da-04795af326de",
           nom: formData.nom,
           prenom: formData.prenom,
           adr: formData.adresse,
@@ -55,9 +73,74 @@ export default function Reservation({ trajet }) {
       if (error) {
         throw error;
       }
+
+      if(formData.adulte > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 1,
+            reservation_num: numReservation,
+            quantite: formData.adulte
+          }
+        ]);
+      }
+      if(formData.junior > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 2,
+            reservation_num: numReservation,
+            quantite: formData.junior
+          }
+        ]);
+      }
+      if(formData.enfant > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 3,
+            reservation_num: numReservation,
+            quantite: formData.enfant
+          }
+        ]);
+      }
+      if(formData.voiture > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 4,
+            reservation_num: numReservation,
+            quantite: formData.voiture
+          }
+        ]);
+      }
+      if(formData.camionnette > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 5,
+            reservation_num: numReservation,
+            quantite: formData.camionnette
+          }
+        ]);
+      }
+      if(formData.campingCar > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 6,
+            reservation_num: numReservation,
+            quantite: formData.campingCar
+          }
+        ]);
+      }
+      if(formData.camion > 0) {
+        const {dataRéservation,error} = await supabase.from('enregistrer').insert([
+          {
+            type_num: 7,
+            reservation_num: numReservation,
+            quantite: formData.camion
+          }
+        ]);
+      }
+      
       // Redirection ou message de succès
       alert('Réservation enregistrée avec succès !');
-      router.push('/index'); // Redirige vers une page des réservations, par exemple
+      router.push('/'); // Redirige vers une page des réservations, par exemple
     } catch (error) {
       console.error(error);
       setErrorMessage('Une erreur est survenue lors de la réservation.');
@@ -136,21 +219,23 @@ export default function Reservation({ trajet }) {
               />
             </div>
           </div>
+          
           {/* Champs pour les réservations */}
-          {['adulte', 'junior', 'enfant', 'voiture', 'camionnette', 'campingCar', 'camion'].map((type) => (
-            <div className="flex items-center justify-between gap-4" key={type}>
-              <label htmlFor={type} className="text-gray-700 capitalize">{type}</label>
-              <p className="text-gray-500">50€</p>
+          {types.map((item) => (
+            <div className="flex items-center justify-between gap-4" key={item.key}>
+              <label htmlFor={item.key} className="text-gray-700 capitalize">{item.key}</label>
+              <p className="text-gray-500">{item.tarif} €</p>
               <input
                 type="number"
-                name={type}
-                value={formData[type]}
+                name={item.key}
+                value={formData[item.key]}
                 onChange={handleInputChange}
                 className="p-2 border border-gray-300 rounded"
                 min="0"
               />
             </div>
           ))}
+
           {/* Bouton de soumission */}
           <div className="flex justify-center mt-6">
             <button
@@ -188,6 +273,7 @@ export async function getServerSideProps(context) {
     console.log('trajet non trouvé');
   }
 
+
   // Récupération des informations supplémentaires (bateau, ports, etc.)
   const { data: bateau } = await supabase
     .from('bateau')
@@ -197,7 +283,7 @@ export async function getServerSideProps(context) {
 
   const { data: liaison } = await supabase
     .from('liaison')
-    .select('depart_id, arrivee_id')
+    .select('code, depart_id, arrivee_id')
     .eq('code', trajet.idLiaison)
     .single();
 
@@ -233,6 +319,12 @@ export async function getServerSideProps(context) {
     .eq('idBateau', trajet.idBateau)
     .eq('idPlace', 'C')
     .single();
+
+  const {data: prix } = await supabase 
+  .from('tarifer')
+  .select('tarif')
+  .eq('liaison_code',liaison.code)
+  .order('type', {ascending: true});
 
   const heureDepartFormat = trajet.heureDepart.substring(0,2)+'h'+trajet.heureDepart.substring(3,5);
   const heureArriveeFormat = trajet.heureArrivee.substring(0,2)+'h'+trajet.heureArrivee.substring(3,5);
@@ -274,7 +366,8 @@ export async function getServerSideProps(context) {
         placeGrandVehicule: placeGrandVehicule.capacite,
         heureDepartFormat: heureDepartFormat,
         heureArriveeFormat: heureArriveeFormat,
-        dateFormat: dateFormat
+        dateFormat: dateFormat,
+        prix: prix
       },
     },
   };
