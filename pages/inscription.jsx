@@ -30,11 +30,19 @@ const RegisterPage = () => {
 
     try {
       // Appel à Supabase pour créer un utilisateur
-      const { user, error } = await supabase.auth.signUp({
-        email: mail,
-        password: mdp,
-        displayName: prenom+''+nom,
-      });
+      const { user, error } = await supabase.auth.signUp(
+        {
+          email: mail,
+          password: mdp,
+          options: {
+            data: {
+              display_name: prenom + ' ' + nom,
+              prenom: prenom,
+              nom: nom,
+            }            
+          },
+        }
+      );
 
       setLoading(false);
 
