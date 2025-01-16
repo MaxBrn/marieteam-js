@@ -5,7 +5,11 @@ import { useState } from 'react';
 import Cookie from "js-cookie";
 import Cookies from "js-cookie";
 export default function Reservation({ trajet }) {
-  
+  const calculateTotal = () => {
+    return types.reduce((total, { key, tarif }) => {
+      return total + formData[key] * tarif;
+    }, 0);
+  };
   const router = useRouter();
   const tokenFromCookie = Cookie.get("token");
   if(!tokenFromCookie) {
@@ -161,6 +165,9 @@ export default function Reservation({ trajet }) {
     } finally {
       setIsSubmitting(false);
     }
+
+    
+    
   };
 
   return (
@@ -249,6 +256,11 @@ export default function Reservation({ trajet }) {
               />
             </div>
           ))}
+
+          <div>
+            <p>Total à payer: {calculateTotal()} €</p>
+          </div>
+
 
           {/* Bouton de soumission */}
           <div className="flex justify-center mt-6">
