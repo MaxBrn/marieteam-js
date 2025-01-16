@@ -340,6 +340,7 @@ export async function getServerSideProps(context) {
   .eq('liaison_code',liaison.code)
   .order('type', {ascending: true});
 
+
   const heureDepartFormat = trajet.heureDepart.substring(0,2)+'h'+trajet.heureDepart.substring(3,5);
   const heureArriveeFormat = trajet.heureArrivee.substring(0,2)+'h'+trajet.heureArrivee.substring(3,5);
   const dateFormat = trajet.date.substring(8,10)+'/'+trajet.date.substring(5,7)+'/'+trajet.date.substring(0,4);

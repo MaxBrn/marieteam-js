@@ -104,7 +104,57 @@ export default function ListeTrajet() {
             .eq('idTrajet',trajet.num);
 
           console.log(reservation);
+          let placePassagerReserv = 0;
+          let placePetitVehReserv = 0;
+          let placeGrandVehReserv = 0;
+          console.log("Test num res "+reservation[0]);
+          reservation.forEach(async (res) => {
+            const reservationNum = res.num; // Supposons que chaque élément contient un champ `num`
           
+            // Réservations passager
+            const { data: passagerReserv, error: errorPassagerReserv } = await supabase
+              .from('enregistrer')
+              .select('quantite')
+              .eq('reservation_num', reservationNum)
+              .or('type_num.eq.1,type_num.eq.2,type_num.eq.3');
+          
+            if (errorPassagerReserv) {
+              console.error('Erreur lors de la récupération des réservations passager :', errorPassagerReserv.message);
+            } else if (passagerReserv && passagerReserv.length > 0) {
+              // Additionner toutes les quantités pour les passagers
+              placePassagerReserv += passagerReserv.reduce((sum, row) => sum + row.quantite, 0);
+            }
+            console.log("Passage reserv: "+placePassagerReserv);
+            // Réservations petit véhicule
+            const { data: petitVehiculeReserv, error: errorPetitVehiculeReserv } = await supabase
+              .from('enregistrer')
+              .select('quantite')
+              .eq('reservation_num', reservationNum)
+              .or('type_num.eq.4,type_num.eq.5');
+          
+            if (errorPetitVehiculeReserv) {
+              console.error('Erreur dans la récupération des réservations petit véhicule :', errorPetitVehiculeReserv.message);
+            } else if (petitVehiculeReserv && petitVehiculeReserv.length > 0) {
+              // Additionner toutes les quantités pour les petits véhicules
+              placePetitVehReserv += petitVehiculeReserv.reduce((sum, row) => sum + row.quantite, 0);
+            }
+          
+            // Réservations grand véhicule
+            const { data: grandVehiculeReserv, error: errorGrandVehiculeReserv } = await supabase
+              .from('enregistrer')
+              .select('quantite')
+              .eq('reservation_num', reservationNum)
+              .or('type_num.eq.6,type_num.eq.7');
+          
+            if (errorGrandVehiculeReserv) {
+              console.error('Erreur dans la récupération des réservations grand véhicule :', errorGrandVehiculeReserv.message);
+            } else if (grandVehiculeReserv && grandVehiculeReserv.length > 0) {
+              // Additionner toutes les quantités pour les grands véhicules
+              placeGrandVehReserv += grandVehiculeReserv.reduce((sum, row) => sum + row.quantite, 0);
+            }
+          });
+          
+          console.log("Réservation grand vehicule: "+placeGrandVehReserv);
 
           
           const {data: placePassager, error: errorPassager} = await supabase
@@ -132,13 +182,13 @@ export default function ListeTrajet() {
           const { hours, minutes } = calculerTempsTrajet(trajet.heureDepart, trajet.heureArrivee);
           if(hours > 0) {
             return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${hours}h ${minutes}m`, portDepart: portDepart.nom,
-             portArrivee: portArrivee.nom, placePassager: placePassager.capacite, placePetitVehicule: placePetitVehicule.capacite,
-             placeGrandVehicule: placeGrandVehicule.capacite };
+             portArrivee: portArrivee.nom, placePassager: placePassager.capacite - placePassagerReserv, placePetitVehicule: placePetitVehicule.capacite - placePetitVehReserv,
+             placeGrandVehicule: placeGrandVehicule.capacite - placeGrandVehReserv };
           }
           else {
             return { ...trajet, nomBateau: bateau.nom, tempsTrajet: `${minutes}m`, portDepart: portDepart.nom, 
-            portArrivee: portArrivee.nom, placePassager: placePassager.capacite, placePetitVehicule: placePetitVehicule.capacite,
-            placeGrandVehicule: placeGrandVehicule.capacite };
+            portArrivee: portArrivee.nom, placePassager: placePassager.capacite - placePassagerReserv, placePetitVehicule: placePetitVehicule.capacite - placePetitVehReserv,
+            placeGrandVehicule: placeGrandVehicule.capacite - placeGrandVehReserv};
           }
         })
       );
