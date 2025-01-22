@@ -51,11 +51,45 @@ export default function Reservation({ trajet }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const numericValue = parseInt(value, 10);
+  
+    const updatedFormData = { ...formData, [name]: numericValue };
+  
+    // Vérification des limites par catégorie
+    const totalPassagers =
+      updatedFormData.adulte + updatedFormData.junior + updatedFormData.enfant;
+    const totalPetitsVehicules =
+      updatedFormData.voiture + updatedFormData.camionnette;
+    const totalGrandsVehicules =
+      updatedFormData.campingCar + updatedFormData.camion;
+  
+    if (
+      (name === 'adulte' || name === 'junior' || name === 'enfant') &&
+      totalPassagers > trajet.placePassager
+    ) {
+      alert('Nombre de passagers dépassé !');
+      return;
+    }
+  
+    if (
+      (name === 'voiture' || name === 'camionnette') &&
+      totalPetitsVehicules > trajet.placePetitVehicule
+    ) {
+      alert('Nombre de petits véhicules dépassé !');
+      return;
+    }
+  
+    if (
+      (name === 'campingCar' || name === 'camion') &&
+      totalGrandsVehicules > trajet.placeGrandVehicule
+    ) {
+      alert('Nombre de grands véhicules dépassé !');
+      return;
+    }
+  
+    setFormData(updatedFormData);
   };
+  
 
   const generateUniqueReservationNum = (idCompte) => {
     const timestamp = Date.now(); // Obtenir le timestamp actuel
@@ -259,6 +293,7 @@ export default function Reservation({ trajet }) {
 
           <div>
             <p>Total à payer: {calculateTotal()} €</p>
+            <p>Place dispo: {trajet.placePassager - (formData.adulte+formData.junior+formData.enfant)}, {trajet.placePetitVehicule}, {trajet.placeGrandVehicule}</p>
           </div>
 
 
@@ -325,6 +360,63 @@ export async function getServerSideProps(context) {
     .eq('id', liaison.arrivee_id)
     .single();
 
+
+
+
+  const {data: reservation, error:errorReservation} = await supabase
+    .from('reservation')
+    .select('num')
+    .eq('idTrajet',trajet.num);
+
+  let placePassagerReserv = 0;
+  let placePetitVehReserv = 0;
+  let placeGrandVehReserv = 0;
+  console.log("Test num res "+reservation[0]);
+  await Promise.all(
+    reservation.map(async (res) => {
+      const reservationNum = res.num; // Supposons que chaque élément contient un champ `num`
+  
+      // Réservations passager
+      const { data: passagerReserv, error: errorPassagerReserv } = await supabase
+        .from('enregistrer')
+        .select('quantite')
+        .eq('reservation_num', reservationNum)
+        .or('type_num.eq.1,type_num.eq.2,type_num.eq.3');
+  
+      if (errorPassagerReserv) {
+        console.error('Erreur lors de la récupération des réservations passager :', errorPassagerReserv.message);
+      } else {
+        placePassagerReserv += passagerReserv.reduce((sum, row) => sum + row.quantite, 0);
+      }
+  
+      // Réservations petit véhicule
+      const { data: petitVehiculeReserv, error: errorPetitVehiculeReserv } = await supabase
+        .from('enregistrer')
+        .select('quantite')
+        .eq('reservation_num', reservationNum)
+        .or('type_num.eq.4,type_num.eq.5');
+  
+      if (errorPetitVehiculeReserv) {
+        console.error('Erreur dans la récupération des réservations petit véhicule :', errorPetitVehiculeReserv.message);
+      } else {
+        placePetitVehReserv += petitVehiculeReserv.reduce((sum, row) => sum + row.quantite, 0);
+      }
+  
+      // Réservations grand véhicule
+      const { data: grandVehiculeReserv, error: errorGrandVehiculeReserv } = await supabase
+        .from('enregistrer')
+        .select('quantite')
+        .eq('reservation_num', reservationNum)
+        .or('type_num.eq.6,type_num.eq.7');
+  
+      if (errorGrandVehiculeReserv) {
+        console.error('Erreur dans la récupération des réservations grand véhicule :', errorGrandVehiculeReserv.message);
+      } else {
+        placeGrandVehReserv += grandVehiculeReserv.reduce((sum, row) => sum + row.quantite, 0);
+      }
+    })
+  );
+
   const { data: placePassager } = await supabase
     .from('contenir')
     .select('capacite')
@@ -388,9 +480,9 @@ export async function getServerSideProps(context) {
         tempsTrajet: `${hours}h ${minutes}m`,
         portDepart: portDepart.nom,
         portArrivee: portArrivee.nom,
-        placePassager: placePassager.capacite,
-        placePetitVehicule: placePetitVehicule.capacite,
-        placeGrandVehicule: placeGrandVehicule.capacite,
+        placePassager: placePassager.capacite - placePassagerReserv,
+        placePetitVehicule: placePetitVehicule.capacite - placePetitVehReserv,
+        placeGrandVehicule: placeGrandVehicule.capacite - placeGrandVehReserv,
         heureDepartFormat: heureDepartFormat,
         heureArriveeFormat: heureArriveeFormat,
         dateFormat: dateFormat,
