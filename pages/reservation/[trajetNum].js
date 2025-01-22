@@ -48,7 +48,13 @@ export default function Reservation({ trajet }) {
   if (!trajet) {
     return <p>Chargement des données...</p>;
   }
-
+  const handleInputChange2 = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const numericValue = parseInt(value, 10);
@@ -215,14 +221,14 @@ export default function Reservation({ trajet }) {
         </p>
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
           {/* Champs de formulaire */}
-          <div className="flex">
+          <div className="flex gap-4">
             <div className="w-1/2 flex flex-col">
               <label htmlFor="nom" className="text-gray-700">Nom</label>
               <input
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={handleInputChange}
+                onChange={handleInputChange2}
                 className="p-2 border border-gray-300 rounded"
                 required
               />
@@ -233,7 +239,7 @@ export default function Reservation({ trajet }) {
                 type="text"
                 name="prenom"
                 value={formData.prenom}
-                onChange={handleInputChange}
+                onChange={handleInputChange2}
                 className="p-2 border border-gray-300 rounded"
                 required
               />
@@ -245,19 +251,19 @@ export default function Reservation({ trajet }) {
               type="text"
               name="adresse"
               value={formData.adresse}
-              onChange={handleInputChange}
+              onChange={handleInputChange2}
               className="p-2 border border-gray-300 rounded"
               required
             />
           </div>
-          <div className="flex">
+          <div className="flex gap-4">
             <div className="w-1/2 flex flex-col">
               <label htmlFor="codePostal" className="text-gray-700">Code Postal</label>
               <input
                 type="text"
                 name="codePostal"
                 value={formData.codePostal}
-                onChange={handleInputChange}
+                onChange={handleInputChange2}
                 className="p-2 border border-gray-300 rounded"
                 required
               />
@@ -268,7 +274,7 @@ export default function Reservation({ trajet }) {
                 type="text"
                 name="ville"
                 value={formData.ville}
-                onChange={handleInputChange}
+                onChange={handleInputChange2}
                 className="p-2 border border-gray-300 rounded"
                 required
               />
@@ -277,24 +283,39 @@ export default function Reservation({ trajet }) {
           
           {/* Champs pour les réservations */}
           {types.map((item) => (
-            <div className="flex items-center justify-between gap-4" key={item.key}>
-              <label htmlFor={item.key} className="text-gray-700 capitalize">{item.key}</label>
-              <p className="text-gray-500">{item.tarif} €</p>
+            <div
+              className="grid grid-cols-3 items-center gap-4 px-10"
+              key={item.key}
+            >
+              <label
+                htmlFor={item.key}
+                className="text-gray-700 capitalize col-span-1"
+              >
+                {item.key}
+              </label>
+              <p className="text-gray-500 text-center col-span-1">{item.tarif} €</p>
               <input
                 type="number"
                 name={item.key}
                 value={formData[item.key]}
                 onChange={handleInputChange}
-                className="p-2 border border-gray-300 rounded"
+                className="p-2 border border-gray-300 rounded col-span-1"
                 min="0"
               />
             </div>
           ))}
 
+
           <div>
             <p>Total à payer: {calculateTotal()} €</p>
-            <p>Place dispo: {trajet.placePassager - (formData.adulte+formData.junior+formData.enfant)}, {trajet.placePetitVehicule}, {trajet.placeGrandVehicule}</p>
+            <p className='pt-3'>Places disponibles:<br/></p>
+                <ul className="pl-2 border-l border-black">
+                  <li>Place passager: {trajet.placePassager - (formData.adulte+formData.junior+formData.enfant)} </li>
+                  <li>Place véhicule inférieur à 2m: {trajet.placePetitVehicule - (formData.voiture+formData.camionnette)}</li>
+                  <li>Place véhicule supérieur à 2m: {trajet.placeGrandVehicule - (formData.camion+formData.campingCar)}</li>
+                </ul>
           </div>
+          
 
 
           {/* Bouton de soumission */}
