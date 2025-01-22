@@ -57,8 +57,8 @@ export default function Reservation({ trajet }) {
   };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const numericValue = parseInt(value, 10);
-  
+    const numericValue = value === '' ? 0 : parseInt(value, 10); // Remplace NaN par 0 si le champ est vide ou invalide
+    
     const updatedFormData = { ...formData, [name]: numericValue };
   
     // Vérification des limites par catégorie
@@ -96,6 +96,7 @@ export default function Reservation({ trajet }) {
     setFormData(updatedFormData);
   };
   
+  
 
   const generateUniqueReservationNum = (idCompte) => {
     const timestamp = Date.now(); // Obtenir le timestamp actuel
@@ -107,6 +108,21 @@ export default function Reservation({ trajet }) {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage('');
+
+    const totalQuantities =
+    formData.adulte +
+    formData.junior +
+    formData.enfant +
+    formData.voiture +
+    formData.camionnette +
+    formData.campingCar +
+    formData.camion;
+
+    if (totalQuantities === 0) {
+      setErrorMessage('Veuillez sélectionner au moins une place avant de réserver.');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       
