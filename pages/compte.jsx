@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { AiFillEdit } from "react-icons/ai"; // Icône de stylo
-import { AiOutlineClose } from "react-icons/ai"; // Icône de fermeture
+import { AiOutlineClose, AiOutlineCheckCircle } from "react-icons/ai"; // Icône de fermeture
 import { supabase } from "@/lib/supabase";
 import { FaArrowUpRightFromSquare } from "react-icons/fa6";
+import { IoTicket } from "react-icons/io5";
+
+
 
 const Compte = () => {
   const [editing, setEditing] = useState(false);
@@ -232,42 +235,69 @@ const Compte = () => {
           onClick={closeModal}
         >
           <div
-            className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl relative"
+            className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-xl relative"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Bouton de fermeture */}
             <button
-              className="absolute top-4 right-4"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
               onClick={closeModal}
             >
-              <AiOutlineClose className="text-2xl" />
+              <AiOutlineClose className="text-xl" />
             </button>
-            <h3 className="text-xl font-bold mb-4">Détails de la réservation</h3>
-            <p className="">
-              Numéro de réservation : {selectedReservation.num}
-            </p>
-            <p className="">
-              {selectedReservation.depart_nom} - {selectedReservation.arrivee_nom} le {selectedReservation.date}
-            </p>
-            <p className="">
-              Détails des places réservées :
-            </p>
-            <ul>
-              {selectedReservation.places.map((place, i) => (
-                <li className="pl-2 border-l border-black" key={i}>
-                  {place.type.libelle} : {place.quantite} places, {place.tarif} € / place
-                </li>
-              ))}
-            </ul>
-            <p className="text-sm text-gray-800 font-bold mt-4">
-              Prix total :{" "}
-              {selectedReservation.places
-                .reduce((acc, place) => acc + place.total, 0)
-                .toFixed(2)}{" "}
-              €
-            </p>
+
+            {/* En-tête */}
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">
+                Réservation {selectedReservation.num}
+              </h3>
+              <p className="text-gray-500 mt-4">
+                {selectedReservation.depart_nom} - {selectedReservation.arrivee_nom} le{" "}
+                <span className="font-semibold text-gray-700">{selectedReservation.date}</span>
+              </p>
+            </div>
+
+            <hr className="border-gray-200 mb-6" />
+
+            {/* Détails des places */}
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-md shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                  <span className=" p-2 mr-2">
+                    <IoTicket />
+                  </span>
+                  Places réservées
+                </h4>
+                <ul className="space-y-2">
+                  {selectedReservation.places.map((place, i) => (
+                    <li
+                      className="flex justify-between items-center pl-3 text-gray-700"
+                      key={i}
+                    >
+                      <span>{place.type.libelle}</span>
+                      <span>
+                        {place.quantite} places, {place.tarif} € / place
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Total */}
+              <div className="text-right">
+                <p className="text-lg font-semibold">
+                  Prix total :{" "}
+                  {selectedReservation.places
+                    .reduce((acc, place) => acc + place.total, 0)
+                    .toFixed(2)}{" "}
+                  €
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
