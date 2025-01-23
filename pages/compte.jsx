@@ -252,8 +252,7 @@ const Compte = () => {
                 Réservation {selectedReservation.num}
               </h3>
               <p className="text-gray-500 mt-4">
-                {selectedReservation.depart_nom} - {selectedReservation.arrivee_nom} le{" "}
-                <span className="font-semibold text-gray-700">{selectedReservation.date}</span>
+                {selectedReservation.depart_nom} - {selectedReservation.arrivee_nom} le {selectedReservation.date}
               </p>
             </div>
 
