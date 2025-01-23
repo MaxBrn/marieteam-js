@@ -4,6 +4,8 @@ import { AiOutlineClose, AiOutlineCheckCircle } from "react-icons/ai"; // Icône
 import { supabase } from "@/lib/supabase";
 import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 import { IoTicket } from "react-icons/io5";
+import { BsTicketDetailed } from "react-icons/bs";
+
 
 
 
@@ -213,7 +215,7 @@ const Compte = () => {
                   <button
                     onClick={() => setSelectedReservation(res)}
                   >
-                    <FaArrowUpRightFromSquare/>
+                    <BsTicketDetailed className="text-2xl"/>
                   </button>
                 </div>
               ))}
