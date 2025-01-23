@@ -476,10 +476,10 @@ export async function getServerSideProps(context) {
     .single();
 
   const {data: prix } = await supabase 
-  .from('tarifer')
-  .select('tarif')
-  .eq('liaison_code',liaison.code)
-  .order('type', {ascending: true});
+    .from('tarifer')
+    .select('tarif')
+    .eq('liaison_code',liaison.code)
+    .order('type', {ascending: true});
 
 
   const heureDepartFormat = trajet.heureDepart.substring(0,2)+'h'+trajet.heureDepart.substring(3,5);

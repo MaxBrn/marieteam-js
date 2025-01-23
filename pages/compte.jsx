@@ -1,52 +1,125 @@
 import { useState, useEffect } from "react";
 import { AiFillEdit } from "react-icons/ai"; // Icône de stylo
+import { AiOutlineClose } from "react-icons/ai"; // Icône de fermeture
 import { supabase } from "@/lib/supabase";
+import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 
 const Compte = () => {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedReservation, setSelectedReservation] = useState(null);
   const [userData, setUserData] = useState({
     display_name: "",
     prenom: "",
     nom: "",
     email: "",
+    reservation: [],
   });
 
-  // Fonction pour récupérer les données utilisateur
   const fetchUser = async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) throw error;
 
+      const { data: reservation, error: reservationError } = await supabase
+        .from("reservation")
+        .select("*")
+        .eq("idCompte", user.id);
+
+      if (reservationError) throw reservationError;
+
+      const detailedReservations = await Promise.all(
+        reservation.map(async (res) => {
+          const { data: trajet } = await supabase
+            .from("trajet")
+            .select("*")
+            .eq("num", res.idTrajet)
+            .single();
+
+          const date = trajet.date.substring(8,10)+"/"+trajet.date.substring(5,7)+"/"+trajet.date.substring(0,4) + " de " 
+          + trajet.heureDepart.substring(0,2)+"h"+trajet.heureDepart.substring(3,5) 
+          + " à " + trajet.heureArrivee.substring(0,2)+"h"+trajet.heureArrivee.substring(3,5);
+
+          const { data: liaison } = await supabase
+            .from("liaison")
+            .select("*")
+            .eq("code", trajet.idLiaison)
+            .single();
+
+          const { data: depart } = await supabase
+            .from("port")
+            .select("nom")
+            .eq("id", liaison.depart_id)
+            .single();
+
+          const { data: arrivee } = await supabase
+            .from("port")
+            .select("nom")
+            .eq("id", liaison.arrivee_id)
+            .single();
+
+          const { data: placesReserves } = await supabase
+            .from("enregistrer")
+            .select("*")
+            .eq("reservation_num", res.num);
+
+          const detailedSeats = await Promise.all(
+            placesReserves.map(async (place) => {
+              const { data: seatType } = await supabase
+                .from("type")
+                .select("*")
+                .eq("num", place.type_num)
+                .single();
+
+              const { data: seatPrice } = await supabase
+                .from("tarifer")
+                .select("*")
+                .eq("liaison_code", liaison.code)
+                .eq("type", place.type_num)
+                .single();
+
+              const totalPrice = seatPrice.tarif * place.quantite;
+
+              return { ...place, type: seatType, tarif: seatPrice.tarif, total: totalPrice };
+            })
+          );
+
+          return {
+            ...res,
+            depart_nom: depart.nom,
+            arrivee_nom: arrivee.nom,
+            date: date,
+            places: detailedSeats,
+          };
+        })
+      );
+
       setUserData({
-        display_name: user.user_metadata?.display_name || "Nom inconnu", // Si tu utilises user_metadata pour le display_name
+        display_name: user.user_metadata?.display_name || "Nom inconnu",
         prenom: user.user_metadata?.prenom || "",
         nom: user.user_metadata?.nom || "",
         email: user.email,
+        reservation: detailedReservations,
       });
     } catch (err) {
       setError(err.message);
     }
   };
 
-  // Récupération initiale des données utilisateur
   useEffect(() => {
     fetchUser();
   }, []);
 
-  // Gestion des modifications
   const handleChange = (key, value) => {
     setUserData((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Enregistrement des modifications dans Supabase
   const handleSave = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Mise à jour des données utilisateur dans Supabase
       const { error } = await supabase.auth.updateUser({
         email: userData.email,
         data: {
@@ -58,16 +131,17 @@ const Compte = () => {
 
       if (error) throw error;
 
-      // Réactualiser les données utilisateur après sauvegarde
       await fetchUser();
 
-      setEditing(false); // Sort du mode édition après succès
+      setEditing(false);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const closeModal = () => setSelectedReservation(null);
 
   return (
     <div className="min-h-screen bg-white-100 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
@@ -85,11 +159,10 @@ const Compte = () => {
         </div>
 
         <div className="space-y-6 flex-grow">
-          {/* Affichage ou édition des données */}
           {["prenom", "nom", "email"].map((key) => (
             <div
               key={key}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gray-50 p-4 rounded-md border border-gray-200"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-50 p-4 rounded shadow"
             >
               <div>
                 <p className="text-sm font-medium text-gray-500 capitalize">{key.replace("_", " ")}</p>
@@ -108,7 +181,6 @@ const Compte = () => {
           ))}
         </div>
 
-        {/* Bouton de validation des modifications */}
         {editing && (
           <div className="flex justify-center mt-8">
             <button
@@ -121,9 +193,81 @@ const Compte = () => {
           </div>
         )}
 
-        {/* Affichage des erreurs */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Mes Réservations</h2>
+          {userData.reservation && userData.reservation.length > 0 ? (
+            <div className="space-y-4">
+              {userData.reservation.map((res, index) => (
+                <div
+                  key={index}
+                  className="p-4 bg-blue-50 rounded-md shadow flex justify-between items-center"
+                >
+                  <div>
+                    <p className="">
+                      {res.depart_nom} - {res.arrivee_nom} le {res.date}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedReservation(res)}
+                  >
+                    <FaArrowUpRightFromSquare/>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">Aucune réservation trouvée.</p>
+          )}
+        </div>
+
+        
+
         {error && <p className="text-red-500 text-center mt-4">{error}</p>}
       </div>
+
+      {/* Modal pour les détails de réservation */}
+      {selectedReservation && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4"
+              onClick={closeModal}
+            >
+              <AiOutlineClose className="text-2xl" />
+            </button>
+            <h3 className="text-xl font-bold mb-4">Détails de la réservation</h3>
+            <p className="">
+              Numéro de réservation : {selectedReservation.num}
+            </p>
+            <p className="">
+              {selectedReservation.depart_nom} - {selectedReservation.arrivee_nom} le {selectedReservation.date}
+            </p>
+            <p className="">
+              Détails des places réservées :
+            </p>
+            <ul>
+              {selectedReservation.places.map((place, i) => (
+                <li className="pl-2 border-l border-black" key={i}>
+                  {place.type.libelle} : {place.quantite} places, {place.tarif} € / place
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm text-gray-800 font-bold mt-4">
+              Prix total :{" "}
+              {selectedReservation.places
+                .reduce((acc, place) => acc + place.total, 0)
+                .toFixed(2)}{" "}
+              €
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
