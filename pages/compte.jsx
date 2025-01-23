@@ -150,9 +150,9 @@ const Compte = () => {
 
   return (
     <div className="min-h-screen bg-white-100 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl w-full bg-white shadow rounded-lg p-6 flex flex-col">
+      <div className="max-w-4xl w-full p-6 flex flex-col">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Mon Compte</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Mon Compte</h1>
           {!editing && (
             <button
               className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none flex items-center justify-center ml-4"
@@ -163,16 +163,22 @@ const Compte = () => {
           )}
         </div>
 
-        <div className="space-y-6 flex-grow">
-          {["prenom", "nom", "email"].map((key) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-grow">
+          {["prenom", "nom", "email"].map((key, index) => (
             <div
               key={key}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-50 p-4 rounded shadow"
+              className={`bg-blue-50 p-4 rounded shadow ${
+                index === 2 ? "sm:col-span-2" : ""
+              }`}
             >
               <div>
-                <p className="text-sm font-medium text-gray-500 capitalize">{key.replace("_", " ")}</p>
+                <p className="text-sm font-medium text-gray-500 capitalize">
+                  {key.replace("_", " ")}
+                </p>
                 {!editing ? (
-                  <p className="text-lg font-semibold text-gray-800">{userData[key]}</p>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {userData[key]}
+                  </p>
                 ) : (
                   <input
                     type={key === "email" ? "email" : "text"}
@@ -185,6 +191,8 @@ const Compte = () => {
             </div>
           ))}
         </div>
+
+
 
         {editing && (
           <div className="flex justify-center mt-8">
