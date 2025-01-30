@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function ListeTrajet() {
@@ -9,8 +9,67 @@ export default function ListeTrajet() {
   const [depart, setDepart] = useState('');
   const [arrivee, setArrivee] = useState('');
   const [date, setDate] = useState('');
+  const [secteurs, setSecteurs] = useState([]);  // État pour stocker les secteurs
+  const [selectedSecteur, setSelectedSecteur] = useState(''); // État pour la sélection du secteur
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [liaisons, setLiaisons] = useState([]);
+  const [selectedLiaison, setSelectedLiaison] = useState('');
+  
+
+  useEffect(() => {
+    const fetchSecteurs = async () => {
+      const { data: secteurs, error } = await supabase.from('secteur').select('*');
+      if (error) {
+        console.error('Erreur lors de la récupération des secteurs:', error.message);
+      } else {
+        setSecteurs(secteurs);
+      }
+    };
+    fetchSecteurs();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSecteur) return;
+    
+    const fetchLiaisons = async () => {
+      const { data: liaisons, error } = await supabase
+        .from('liaison')
+        .select('*')
+        .eq('secteur_id', selectedSecteur);
+
+      if (error) {
+        console.error('Erreur lors de la récupération des liaisons:', error.message);
+      } else {
+        // Récupération des noms des ports associés
+        const liaisonsAvecPorts = await Promise.all(
+          liaisons.map(async (liaison) => {
+            const { data: portDepart, error: errorDepart } = await supabase
+              .from('port')
+              .select('nom')
+              .eq('id', liaison.depart_id)
+              .single();
+
+            const { data: portArrivee, error: errorArrivee } = await supabase
+              .from('port')
+              .select('nom')
+              .eq('id', liaison.arrivee_id)
+              .single();
+
+            return {
+              ...liaison,
+              portDepart: portDepart?.nom || 'Inconnu',
+              portArrivee: portArrivee?.nom || 'Inconnu',
+            };
+          })
+        );
+
+        setLiaisons(liaisonsAvecPorts);
+      }
+    };
+
+    fetchLiaisons();
+  }, [selectedSecteur]);
 
   // Fonction pour calculer la différence en minutes entre l'heure de départ et l'heure d'arrivée
   const calculerTempsTrajet = (heureDepart, heureArrivee) => {
@@ -33,12 +92,16 @@ export default function ListeTrajet() {
   };
 
   const rechercheTrajets = async (depart, arrivee, date) => {
+    
     try {
       // Recherche du port de départ
+      console.log(selectedLiaison);
+      const nomDepart = selectedLiaison?.split(' → ')[0] || '';  // Marseille
+      const nomArrivee= selectedLiaison?.split(' → ')[1] || '';
       const { data: portDepart, error: errorPortDepart } = await supabase
         .from('port')
         .select('id, nom')
-        .ilike('nom', `%${depart}%`)
+        .ilike('nom', `%${nomDepart}%`)
         .single();
 
       if (errorPortDepart || !portDepart) {
@@ -49,7 +112,7 @@ export default function ListeTrajet() {
       const { data: portArrivee, error: errorPortArrivee } = await supabase
         .from('port')
         .select('id, nom')
-        .ilike('nom', `%${arrivee}%`)
+        .ilike('nom', `%${nomArrivee}%`)
         .single();
 
       if (errorPortArrivee || !portArrivee) {
@@ -204,7 +267,7 @@ export default function ListeTrajet() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-
+  
     try {
       const trajets = await rechercheTrajets(depart, arrivee, date);
       setTrajetList(trajets);
@@ -222,28 +285,44 @@ export default function ListeTrajet() {
   };
 
   return (
-    <div className="py-16 w-9/12 m-auto">
+    <div className="pt-16 pb-8 w-9/12 mx-auto">
       <form className="w-1/2 m-auto mb-10" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Saisir un départ"
-          value={depart}
-          onChange={(e) => setDepart(e.target.value)}
-          className="block w-full px-4 py-2 border rounded-md mb-2"
-        />
-        <input
-          type="text"
-          placeholder="Saisir une arrivée"
-          value={arrivee}
-          onChange={(e) => setArrivee(e.target.value)}
-          className="block w-full px-4 py-2 border rounded-md mb-2"
-        />
+      {/* Liste déroulante pour sélectionner un secteur */}
+        <select
+          value={selectedSecteur}
+          onChange={(e) => setSelectedSecteur(e.target.value)}
+          className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
+        >
+          <option value="">Sélectionner un secteur</option>
+          {secteurs.map((secteur) => (
+            <option key={secteur.id} value={secteur.id}>
+              {secteur.nom}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
+          value={selectedLiaison}
+          onChange={(e) => setSelectedLiaison(e.target.value)}
+        >
+          <option value="">Sélectionnez une liaison</option>
+          {liaisons.map((liaison) => (
+            <option key={liaison.id} value={liaison.id}>
+              {liaison.portDepart} → {liaison.portArrivee}
+            </option>
+          ))}
+        </select>
+
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="block w-full px-4 py-2 border rounded-md mb-4"
+          className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
         />
+
+        
+        
         <button
           type="submit"
           className="block w-full px-4 py-2 bg-sky-900 text-white rounded-md"

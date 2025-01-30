@@ -65,7 +65,7 @@ export default function NavBar() {
         </div>
 
         <div className="flex gap-5 mr-10">
-          <Link href="/listetrajet" className="font-bold text-lg">
+          <Link href="/listetrajet" className="text-lg">
             Réserver un trajet
           </Link>
 
@@ -75,7 +75,7 @@ export default function NavBar() {
           >
             <button
               onClick={toggleMenu}
-              className="font-bold text-lg flex items-center gap-2"
+              className="text-lg flex items-center gap-2"
             >
               <MdOutlineSupervisorAccount className="text-2xl" />
             </button>

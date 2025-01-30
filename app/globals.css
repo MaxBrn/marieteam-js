@@ -5,18 +5,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  font-family: var(--font-poppins), sans-serif; /* Applique la police globale */
 }
 
 @font-face {
-  font-family: 'Cormorant';
-  src: url('fonts/CormorantNormal.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
+  font-family: 'Poppins';
+  src: url('fonts/Josefin.ttf') format('truetype');
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-poppins), 'Cormorant', monospace; /* Priorité à Poppins */
+  font-family: 'Poppins', monospace;
 }
