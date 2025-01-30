@@ -5,8 +5,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  font-family: var(--font-poppins), sans-serif; /* Applique la police globale */
 }
-
 
 @font-face {
   font-family: 'Cormorant';
@@ -14,8 +14,9 @@
   font-weight: bold;
   font-style: normal;
 }
+
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Cormorant', monospace;
+  font-family: var(--font-poppins), 'Cormorant', monospace; /* Priorité à Poppins */
 }

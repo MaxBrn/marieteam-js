@@ -1,20 +1,26 @@
-// pages/_app.tsx
-import '@/app/globals.css'; // ton fichier CSS global
+// pages/_app.jsx
+import { Poppins } from '@next/font/google';
+import '@/app/globals.css'; // Ton fichier CSS global
 import NavBar from '@/components/NavBar';
-import Footer from '@/components/Footer'
+import Footer from '@/components/Footer';
 import Head from 'next/head';
-import { AppProps } from 'next/app'; // Importation du type AppProps
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '700'], // Ajoute les poids nécessaires
+  variable: '--font-poppins' // Crée une variable CSS
+});
 
 const MyApp = ({ Component, pageProps }) => {
   return (
-    <>
+    <div className={poppins.variable}>
       <Head>
         <title>Marieteam</title>
       </Head>
-      <NavBar /> 
-      <Component {...pageProps} /> 
-      <Footer/>
-    </>
+      <NavBar />
+      <Component {...pageProps} />
+      <Footer />
+    </div>
   );
 };
 
