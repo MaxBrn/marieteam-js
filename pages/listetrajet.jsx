@@ -285,7 +285,7 @@ export default function ListeTrajet() {
   };
 
   return (
-    <div className="pt-16 w-9/12 mx-auto">
+    <div className="pt-16 pb-8 w-9/12 mx-auto">
       <form className="w-1/2 m-auto mb-10" onSubmit={handleSubmit}>
       {/* Liste déroulante pour sélectionner un secteur */}
         <select
