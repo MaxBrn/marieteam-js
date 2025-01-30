@@ -19,7 +19,7 @@ const MentionsLegales = () => {
               Adresse : Avenue Gaston Berger, 59000 Lille, France<br />
               Téléphone : +33 6 78 90 12 34<br />
               Email : <a href="mailto:ylian.bertrand@gastonberger.fr" className="text-blue-500 hover:underline">ylian.bertrand@gastonberger.fr</a>, <a href="mailto:maxime.brunin@gastonberger.fr" className="text-blue-500 hover:underline">maxime.brunin@gastonberger.fr</a>, <a href="mailto:auxence.dupuis@gastonberger.fr" className="text-blue-500 hover:underline">auxence.dupuis@gastonberger.fr</a><br />
-              Capital social : 10 000 000 €<br />
+              Capital social : 900 000 576 329 411.77 € (2024)<br />
               RCS : Paris B 123 456 789
             </p>
 
