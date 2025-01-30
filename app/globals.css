@@ -8,14 +8,12 @@
 }
 
 @font-face {
-  font-family: 'Cormorant';
-  src: url('fonts/CormorantNormal.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
+  font-family: 'Poppins';
+  src: url('fonts/Josefin.ttf') format('truetype');
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Cormorant', monospace;
+  font-family: 'Poppins', monospace;
 }

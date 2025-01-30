@@ -10,11 +10,8 @@ export default function Footer() {
           width={70}
           height={70}
           alt="Logo MarieTeam"
+          className="mb-4"
         />
-      </div>
-      
-      <div className="gap-10 flex mt-3 mb-3 ">
-        <Link href="/listetrajet">Réserver Trajet</Link>
       </div>
 
       <div className="flex justify-between bg-blue-50 w-full py-2 px-4 rounded-b-xl">
