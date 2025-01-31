@@ -131,6 +131,8 @@ export default function Reservation({ trajet }) {
       console.log(user);
       const idUser = user.id;
       const numReservation = generateUniqueReservationNum(idUser)
+      const today = new Date().toISOString().split('T')[0];
+
       const { data, error } = await supabase.from('reservation').insert([
         {
           num: numReservation,
@@ -141,6 +143,7 @@ export default function Reservation({ trajet }) {
           adr: formData.adresse,
           cp: formData.codePostal,
           ville: formData.ville,
+          date: today
         },
       ]);
 
