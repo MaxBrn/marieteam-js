@@ -51,7 +51,7 @@ export default function NavBar() {
   }, [typeof window !== "undefined" && Cookie.get("token")]); // Mettre à jour lorsque le cookie change
 
   return (
-    <nav className="flex bg-blue-50 text-slate-500 py-4 w-9/12 m-auto mt-3 rounded-xl">
+    <nav className="flex bg-blue-50 text-slate-500 py-4 lg:w-9/12 m-auto lg:mt-3 lg:rounded-xl">
       <div className="flex gap-8 justify-between w-full">
         <div className="ml-10">
           <Link href="/">
