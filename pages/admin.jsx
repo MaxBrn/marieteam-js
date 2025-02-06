@@ -131,32 +131,38 @@ export default function Admin() {
         <div className="pt-16 pb-8 w-9/12 mx-auto">
             <h2 className="text-3xl font-bold mb-6 text-center">Tableau de Bord</h2>
 
-            {/* Filtres en haut */}
-            <div className="flex flex-wrap items-center bg-blue-50 p-4 rounded-xl mb-6 shadow-sm gap-4">
-                <div className="flex items-center gap-2">
-                    <FiCalendar className="text-gray-500" size={20} />
-                    <label className="text-sm font-medium text-gray-700">Date de début</label>
-                    <DatePicker
-                        selected={startDate}
-                        onChange={(date) => setStartDate(date)}
-                        className="border p-2 rounded-md w-32 text-center"
-                        dateFormat="yyyy-MM-dd"
-                        locale={fr}
-                    />
+            <div className="flex lg:flex-row flex-col justify-between items-center">
+                {/* Filtres en haut */}
+                <div className="flex flex-wrap items-center gap-4 bg-blue-50 p-4 rounded-xl mb-6 shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <FiCalendar className="text-gray-500" size={20} />
+                        <label className="text-sm font-medium text-gray-700">Date de début</label>
+                        <DatePicker
+                            selected={startDate}
+                            onChange={(date) => setStartDate(date)}
+                            className="border p-2 rounded-md w-32 text-center"
+                            dateFormat="dd-MM-yyyy"
+                            locale={fr}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <FiCalendar className="text-gray-500" size={20} />
+                        <label className="text-sm font-medium text-gray-700">Date de fin</label>
+                        <DatePicker
+                            selected={endDate}
+                            onChange={(date) => setEndDate(date)}
+                            className="border p-2 rounded-md w-32 text-center"
+                            dateFormat="dd-MM-yyyy"
+                            locale={fr}
+                        />
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <FiCalendar className="text-gray-500" size={20} />
-                    <label className="text-sm font-medium text-gray-700">Date de fin</label>
-                    <DatePicker
-                        selected={endDate}
-                        onChange={(date) => setEndDate(date)}
-                        className="border p-2 rounded-md w-32 text-center"
-                        dateFormat="yyyy-MM-dd"
-                        locale={fr}
-                    />
+                <div className="mr-4 bg-blue-50 p-4 rounded-xl mb-6 shadow-sm">
+                    <Link href="/gestionLiaison">Gestion des liaisons</Link>
                 </div>
-            </div>
 
+            </div>
+            
             <div className="flex flex-col lg:flex-row gap-6">
                 {/* Détails et Stats */}
                 <div className="lg:w-1/4 space-y-6">
