@@ -285,8 +285,8 @@ export default function ListeTrajet() {
   };
 
   return (
-    <div className="pt-16 w-9/12 mx-auto">
-      <form className="lg:w-1/2 m-auto" onSubmit={handleSubmit}>
+    <div className="pt-16 pb-8 w-9/12 mx-auto">
+      <form className="lg:w-1/2 m-auto mb-10" onSubmit={handleSubmit}>
       {/* Liste déroulante pour sélectionner un secteur */}
         <select
           value={selectedSecteur}
@@ -332,7 +332,7 @@ export default function ListeTrajet() {
       </form>
       {message && <p className="text-red-500">{message}</p>}
 
-      <div className="flex pt-10 pb-10">
+      <div className="flex">
         <div
             className="flex flex-col w-2/3 overflow-y-auto max-h-[400px] pr-4
             [&::-webkit-scrollbar]:w-1

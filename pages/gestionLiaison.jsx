@@ -234,7 +234,7 @@ export default function GestionLiaison() {
     };
 
     return (
-        <div className="pt-16 w-9/12 mx-auto">
+        <div className="pt-16 pb-8 w-9/12 mx-auto">
             <h2 className="text-3xl font-bold mb-6 text-center">Gestion des Liaisons</h2>
 
             {loading ? (
