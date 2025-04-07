@@ -10,9 +10,9 @@ const MyApp = ({ Component, pageProps }) => {
       <Head>
         <title>Marieteam</title>
       </Head>
-      <div className="flex flex-col min-h-screen">
+      <div className="lg:flex lg:flex-col lg:min-h-screen">
         <NavBar />
-        <main className="flex-grow">
+        <main className="lg:flex-grow">
           <Component {...pageProps} />
         </main>
         <Footer />
