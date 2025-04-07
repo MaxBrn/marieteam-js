@@ -15,7 +15,7 @@ const MyApp = ({ Component, pageProps }) => {
         <main className="lg:flex-grow">
           <Component {...pageProps} />
         </main>
-        <Footer />
+        <Footer className="mt-4"/>
       </div>
     </>
   );
