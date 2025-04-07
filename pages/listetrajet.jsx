@@ -332,7 +332,7 @@ export default function ListeTrajet() {
       </form>
       {message && <p className="text-red-500">{message}</p>}
 
-      <div className="flex pt-10">
+      <div className="flex pt-10 pb-10">
         <div
             className="flex flex-col w-2/3 overflow-y-auto max-h-[400px] pr-4
             [&::-webkit-scrollbar]:w-1
