@@ -61,7 +61,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="flex justify-center items-center pt-10">
+    <div className="flex justify-center items-center py-10">
       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-xl">
         <h1 className="text-2xl font-bold text-center">Inscription</h1>
         {message && <p className="text-red-500 text-center">{message}</p>}
