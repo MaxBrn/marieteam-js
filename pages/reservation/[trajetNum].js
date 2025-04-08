@@ -446,13 +446,14 @@ export default function Reservation({ trajet }) {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center pt-10">
-          <div className='mb-10'>
-            <p className='text-xl font-bold text-center'>Merci pour votre réservation !</p>
+        <div className="flex flex-col items-center p-10">
+          <div className='mb-10 text-center'>
+            <p className='text-xl font-bold text-center mb-2'>Merci pour votre réservation !</p>
+            <p>Votre réservation a bien été prise en compte.</p>
             <p>Nous vous remercions de nous avoir choisi, et avons hâte de vous retrouver sur les flots !</p>
-            <p>En cas de tout problème, n'hésitez pas à nous contacter.</p>
+            <p className='mt-4 text-right'>L'équipe MarieTeam</p>
           </div>
-          <div className="w-full max-w-lg p-8 shadow-md rounded-lg bg-blue-50">
+          <div className="w-full max-w-2xl p-8 border-t-2">
             <div className="text-center mb-6">
               <h3 className="text-xl font-bold text-gray-800">
                 Réservation {selectedReservation?.num}
@@ -462,9 +463,7 @@ export default function Reservation({ trajet }) {
               </p>
             </div>
 
-            <hr className="border-gray-200 mb-6" />
-
-            <div className="space-y-4">
+            <div className="space-y-4 max-w-lg mx-auto">
               <div className="bg-blue-50 p-4 rounded-md shadow-sm">
                 <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                   <span className="p-2 mr-2">
