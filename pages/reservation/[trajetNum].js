@@ -10,6 +10,7 @@ import { BsTicketDetailed } from "react-icons/bs";
 export default function Reservation({ trajet }) {
   const [done, setDone] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   
   const calculateTotal = () => {
@@ -191,6 +192,7 @@ export default function Reservation({ trajet }) {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage('');
+    setLoading(true);
 
     const totalQuantities =
       formData.adulte +
@@ -324,12 +326,15 @@ export default function Reservation({ trajet }) {
       setErrorMessage('Une erreur est survenue lors de la réservation.');
     } finally {
       setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
     <>
-      {!done ? (
+    {!loading ? (
+      <>
+{!done ? (
         <div className="flex items-center justify-center min-h-screen py-16">
           <div className="w-full max-w-lg p-8 shadow-md rounded-lg bg-blue-50">
             <p className="text-lg font-bold mb-4">
@@ -500,6 +505,16 @@ export default function Reservation({ trajet }) {
           </button>
         </div>
       )}
+      </>
+    ):
+    (
+      <div className='flex items-center justify-center  py-16'>
+        <p className='text-center'>Chargement...</p>
+      </div>
+    )
+
+    }
+      
     </>
   );
 }
