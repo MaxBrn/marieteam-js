@@ -167,7 +167,7 @@ export default function GestionLiaison() {
             }
             try {
                 const exist = await isExisting(selectedSecteur, selectedPortDepart, selectedPortArrivee);
-                if (exist) {
+                if (exist && exist.code != editingLiaison.code) {
                     alert('La liaison existe déjà');
                 }
                 else {
@@ -213,18 +213,29 @@ export default function GestionLiaison() {
     }
 
     async function deleteLiaison(code) {
-        const { error } = await supabase
-            .from('liaison')
-            .delete()
-            .eq('code', code);
-
-        if (error) {
-            console.error("Erreur de suppression :", error.message);
-        } else {
-            alert("Liaison supprimée avec succès !");
-            fetchLiaisons();
+        // Vérifie si la liaison est utilisée dans un trajet
+        const { data: trajets, error: errorTrajets } = await supabase
+          .from('trajet')
+          .select('*')
+          .eq('idLiaison', code); // ou autre colonne selon ta structure
+      
+        if (trajets && trajets.length > 0) {
+          alert("Impossible de supprimer cette liaison : elle est utilisée dans un ou plusieurs trajets.");
+          return;
         }
-    }
+      
+        const { error } = await supabase
+          .from('liaison')
+          .delete()
+          .eq('code', code);
+      
+        if (error) {
+          console.error("Erreur de suppression :", error.message);
+        } else {
+          alert("Liaison supprimée avec succès !");
+          fetchLiaisons();
+        }
+      }
 
     const resetForm = () => {
         setSelectedSecteur('');
