@@ -37,87 +37,92 @@ export default function Admin() {
             const startDateFormatted = formatDate(startDate);
             const endDateFormatted = formatDate(endDate);
 
-            // Récupérer tous les trajets dans la période
-            const { data: trajets, error: errorTrajets } = await supabase
+            // 1. Récupérer les revenus (basé sur la date de réservation)
+            const { data: reservationsData, error: errorReservations } = await supabase
+                .from('reservation')
+                .select(`
+                    num,
+                    date,
+                    idTrajet,
+                    trajet:trajet (
+                        idLiaison
+                    ),
+                    enregistrer (
+                        quantite,
+                        type_num
+                    )
+                `)
+                .gte('date', startDateFormatted)
+                .lte('date', endDateFormatted);
+
+            if (errorReservations) throw errorReservations;
+
+            // 2. Récupérer les passagers (basé sur la date du trajet)
+            const { data: trajetsData, error: errorTrajets } = await supabase
                 .from('trajet')
-                .select('*')
+                .select(`
+                    num,
+                    date,
+                    idLiaison,
+                    reservation!reservation_idTrajet_fkey (
+                        num,
+                        enregistrer (
+                            quantite,
+                            type_num
+                        )
+                    )
+                `)
                 .gte('date', startDateFormatted)
                 .lte('date', endDateFormatted);
 
             if (errorTrajets) throw errorTrajets;
 
-            // Récupérer toutes les réservations (sans filtre de date pour le moment)
-            const { data: reservations, error: errorReservation } = await supabase
-                .from('reservation')
+            // Récupérer tous les tarifs en une seule fois
+            const { data: tarifs, error: errorTarifs } = await supabase
+                .from('tarifer')
                 .select('*');
 
-            if (errorReservation) throw errorReservation;
+            if (errorTarifs) throw errorTarifs;
 
-            // Traiter chaque réservation
-            for (const reservation of reservations) {
-                const { data: trajet, error: errorTrajet } = await supabase
-                    .from('trajet')
-                    .select('*')
-                    .eq('num', reservation.idTrajet)
-                    .single();
+            // Créer un map des tarifs pour un accès rapide
+            const tarifsMap = {};
+            tarifs.forEach(tarif => {
+                tarifsMap[`${tarif.liaison_code}-${tarif.type}`] = tarif.tarif;
+            });
 
-                if (errorTrajet) throw errorTrajet;
-
-                const { data: enregistrements, error: errorEnregistrements } = await supabase
-                    .from('enregistrer')
-                    .select('*')
-                    .eq('reservation_num', reservation.num);
-
-                if (errorEnregistrements) throw errorEnregistrements;
-
-                // Initialisation des compteurs pour cette réservation
-                let catA = 0, catB = 0, catC = 0;
+            // Traiter les revenus
+            for (const reservation of reservationsData) {
                 let montantTotal = 0;
-
-                // Calcul des montants et du nombre de passagers pour cette réservation
-                for (const enregistrement of enregistrements) {
-                    const { data: prix, error: errorPrix } = await supabase
-                        .from('tarifer')
-                        .select('*')
-                        .eq('liaison_code', trajet.idLiaison)
-                        .eq('type', enregistrement.type_num)
-                        .single();
-
-                    if (errorPrix) throw errorPrix;
-
-                    const montant = enregistrement.quantite * prix.tarif;
-                    montantTotal += montant;
-
-                    if (enregistrement.type_num == 1 || enregistrement.type_num == 2 || enregistrement.type_num == 3) {
-                        catA += enregistrement.quantite;
-                    } else if (enregistrement.type_num == 4 || enregistrement.type_num == 5) {
-                        catB += enregistrement.quantite;
-                    } else if (enregistrement.type_num == 6 || enregistrement.type_num == 7) {
-                        catC += enregistrement.quantite;
-                    }
+                
+                for (const enregistrement of reservation.enregistrer) {
+                    const tarifKey = `${reservation.trajet.idLiaison}-${enregistrement.type_num}`;
+                    const tarif = tarifsMap[tarifKey];
+                    montantTotal += enregistrement.quantite * tarif;
                 }
 
-                // Ajouter les revenus si la date de réservation est dans la période
-                const dateResa = reservation.date;
-                if (dateResa >= startDateFormatted && dateResa <= endDateFormatted) {
-                    prixTotalCalculé += montantTotal;
-                    revenusTemp[dateResa] = (revenusTemp[dateResa] || 0) + montantTotal;
+                prixTotalCalculé += montantTotal;
+                revenusTemp[reservation.date] = (revenusTemp[reservation.date] || 0) + montantTotal;
+            }
+
+            // Traiter les passagers
+            for (const trajet of trajetsData) {
+                if (!passagerTemp[trajet.date]) {
+                    passagerTemp[trajet.date] = { catA: 0, catB: 0, catC: 0 };
                 }
 
-                // Ajouter les passagers si la date du trajet est dans la période
-                const dateTrajet = trajet.date;
-                if (dateTrajet >= startDateFormatted && dateTrajet <= endDateFormatted) {
-                    if (!passagerTemp[dateTrajet]) {
-                        passagerTemp[dateTrajet] = { catA: 0, catB: 0, catC: 0 };
+                for (const reservation of trajet.reservation || []) {
+                    for (const enregistrement of reservation.enregistrer) {
+                        if (enregistrement.type_num <= 3) {
+                            passagerTemp[trajet.date].catA += enregistrement.quantite;
+                            totalPassagerTemp.catA += enregistrement.quantite;
+                        } else if (enregistrement.type_num <= 5) {
+                            passagerTemp[trajet.date].catB += enregistrement.quantite;
+                            totalPassagerTemp.catB += enregistrement.quantite;
+                        } else {
+                            passagerTemp[trajet.date].catC += enregistrement.quantite;
+                            totalPassagerTemp.catC += enregistrement.quantite;
+                        }
                     }
-
-                    passagerTemp[dateTrajet].catA += catA;
-                    passagerTemp[dateTrajet].catB += catB;
-                    passagerTemp[dateTrajet].catC += catC;
-
-                    totalPassagerTemp.catA += catA;
-                    totalPassagerTemp.catB += catB;
-                    totalPassagerTemp.catC += catC;
                 }
             }
 
