@@ -9,7 +9,7 @@ import { FiCalendar, FiBarChart2, FiDollarSign } from 'react-icons/fi';
 import LoadingSpinner from '@/components/LoadingSpinner';
 export default function Admin() {
     const [prixTotal, setPrixTotal] = useState(0);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState(new Date('2025-01-01'));
     const [endDate, setEndDate] = useState(new Date('2025-01-31'));
@@ -207,9 +207,7 @@ export default function Admin() {
             
             <div className="flex flex-col lg:flex-row gap-6">
                 {loading ? (
-                    <div className="w-full flex justify-center items-center min-h-[400px]">
-                        <LoadingSpinner />
-                    </div>
+                    <LoadingSpinner />
                 ) : (
                     <>
                         {/* Détails et Stats */}

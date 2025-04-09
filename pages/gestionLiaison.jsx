@@ -8,10 +8,11 @@ import { FiCalendar, FiBarChart2, FiDollarSign } from 'react-icons/fi';
 import { MdDelete } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
 import { IoMdAdd } from "react-icons/io";
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function GestionLiaison() {
     const [liaisons, setLiaisons] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
     const [isEditing, setIsEditing] = useState(false);  // Nouvel état pour l'édition
@@ -246,14 +247,15 @@ export default function GestionLiaison() {
 
     return (
         <div className="pt-16 pb-8 w-9/12 mx-auto">
-            <h2 className="text-3xl font-bold mb-6 text-center">Gestion des Liaisons</h2>
 
             {loading ? (
-                <p>Chargement en cours...</p>
+                <LoadingSpinner />
             ) : error ? (
                 <p className="text-red-500">{error}</p>
             ) : (
                 <>
+
+            <h2 className="text-3xl font-bold mb-6 text-center">Gestion des Liaisons</h2>
                     {(isAdding || isEditing) ? (
                         <form className="grid mx-auto lg:w-1/2 grid-cols-2 gap-4" onSubmit={isEditing ? handleUpdate : handleSubmit}>
                             <select
