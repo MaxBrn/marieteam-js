@@ -37,22 +37,24 @@ export default function Admin() {
             const startDateFormatted = formatDate(startDate);
             const endDateFormatted = formatDate(endDate);
 
-            const { data: reservations, error: errorReservation } = await supabase
-                .from('reservation')
+            // Récupérer tous les trajets dans la période
+            const { data: trajets, error: errorTrajets } = await supabase
+                .from('trajet')
                 .select('*')
                 .gte('date', startDateFormatted)
                 .lte('date', endDateFormatted);
 
+            if (errorTrajets) throw errorTrajets;
+
+            // Récupérer toutes les réservations (sans filtre de date pour le moment)
+            const { data: reservations, error: errorReservation } = await supabase
+                .from('reservation')
+                .select('*');
+
             if (errorReservation) throw errorReservation;
 
+            // Traiter chaque réservation
             for (const reservation of reservations) {
-                const { data: enregistrements, error: errorEnregistrements } = await supabase
-                    .from('enregistrer')
-                    .select('*')
-                    .eq('reservation_num', reservation.num);
-
-                if (errorEnregistrements) throw errorEnregistrements;
-
                 const { data: trajet, error: errorTrajet } = await supabase
                     .from('trajet')
                     .select('*')
@@ -60,6 +62,13 @@ export default function Admin() {
                     .single();
 
                 if (errorTrajet) throw errorTrajet;
+
+                const { data: enregistrements, error: errorEnregistrements } = await supabase
+                    .from('enregistrer')
+                    .select('*')
+                    .eq('reservation_num', reservation.num);
+
+                if (errorEnregistrements) throw errorEnregistrements;
 
                 // Initialisation des compteurs pour cette réservation
                 let catA = 0, catB = 0, catC = 0;
@@ -88,26 +97,28 @@ export default function Admin() {
                     }
                 }
 
-                // Mise à jour des totaux une seule fois par réservation
-                prixTotalCalculé += montantTotal;
-
-                // Date de réservation pour les revenus
+                // Ajouter les revenus si la date de réservation est dans la période
                 const dateResa = reservation.date;
-                revenusTemp[dateResa] = (revenusTemp[dateResa] || 0) + montantTotal;
-
-                // Date du trajet pour les passagers
-                const dateTrajet = trajet.date;
-                if (!passagerTemp[dateTrajet]) {
-                    passagerTemp[dateTrajet] = { catA: 0, catB: 0, catC: 0 };
+                if (dateResa >= startDateFormatted && dateResa <= endDateFormatted) {
+                    prixTotalCalculé += montantTotal;
+                    revenusTemp[dateResa] = (revenusTemp[dateResa] || 0) + montantTotal;
                 }
 
-                totalPassagerTemp.catA += catA;
-                totalPassagerTemp.catB += catB;
-                totalPassagerTemp.catC += catC;
+                // Ajouter les passagers si la date du trajet est dans la période
+                const dateTrajet = trajet.date;
+                if (dateTrajet >= startDateFormatted && dateTrajet <= endDateFormatted) {
+                    if (!passagerTemp[dateTrajet]) {
+                        passagerTemp[dateTrajet] = { catA: 0, catB: 0, catC: 0 };
+                    }
 
-                passagerTemp[dateTrajet].catA += catA;
-                passagerTemp[dateTrajet].catB += catB;
-                passagerTemp[dateTrajet].catC += catC;
+                    passagerTemp[dateTrajet].catA += catA;
+                    passagerTemp[dateTrajet].catB += catB;
+                    passagerTemp[dateTrajet].catC += catC;
+
+                    totalPassagerTemp.catA += catA;
+                    totalPassagerTemp.catB += catB;
+                    totalPassagerTemp.catC += catC;
+                }
             }
 
             setPrixTotal(prixTotalCalculé);
