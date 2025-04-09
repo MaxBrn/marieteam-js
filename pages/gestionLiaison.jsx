@@ -23,6 +23,9 @@ export default function GestionLiaison() {
     const [selectedPortArrivee, setSelectedPortArrivee] = useState('');
     const [distance, setDistance] = useState('');
     const [editingLiaison, setEditingLiaison] = useState(null); // Liaison en cours d'édition
+    const [loadingCreate, setLoadingCreate] = useState(false);
+    const [loadingUpdate, setLoadingUpdate] = useState(false);
+    const [loadingDelete, setLoadingDelete] = useState(false);
 
     const fetchSecteurs = async () => {
         setLoading(true);
@@ -107,13 +110,16 @@ export default function GestionLiaison() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoadingCreate(true);
         if (selectedSecteur !== "" && selectedPortArrivee !== "" && selectedPortDepart !== "" && distance !== "") {
             if (selectedPortArrivee === selectedPortDepart) {
                 alert("Le port d'arrivée ne peut pas être le même que celui de départ");
+                setLoadingCreate(false);
                 return;
             }
             if (distance <= 0) {
                 alert("Une liaison ne peut pas avoir une distance inférieure à 0");
+                setLoadingCreate(false);
                 return;
             }
             try {
@@ -140,9 +146,12 @@ export default function GestionLiaison() {
                 }
             } catch (error) {
                 setMessage(error.message);
+            } finally {
+                setLoadingCreate(false);
             }
         } else {
             alert("Veuillez remplir les champs");
+            setLoadingCreate(false);
         }
     };
 
@@ -157,13 +166,16 @@ export default function GestionLiaison() {
 
     const handleUpdate = async (e) => {
         e.preventDefault();
+        setLoadingUpdate(true);
         if (selectedSecteur !== "" && selectedPortArrivee !== "" && selectedPortDepart !== "" && distance !== "") {
             if (selectedPortArrivee === selectedPortDepart) {
                 alert("Le port d'arrivée ne peut pas être le même que celui de départ");
+                setLoadingUpdate(false);
                 return;
             }
             if (distance <= 0) {
                 alert("Une liaison ne peut pas avoir une distance inférieure à 0");
+                setLoadingUpdate(false);
                 return;
             }
             try {
@@ -195,9 +207,12 @@ export default function GestionLiaison() {
                 
             } catch (error) {
                 console.error('Erreur de mise à jour:', error);
+            } finally {
+                setLoadingUpdate(false);
             }
         } else {
             alert("Veuillez remplir tous les champs");
+            setLoadingUpdate(false);
         }
     };
 
@@ -214,6 +229,7 @@ export default function GestionLiaison() {
     }
 
     async function deleteLiaison(code) {
+        setLoadingDelete(true);
         // Vérifie si la liaison est utilisée dans un trajet
         const { data: trajets, error: errorTrajets } = await supabase
           .from('trajet')
@@ -222,6 +238,7 @@ export default function GestionLiaison() {
       
         if (trajets && trajets.length > 0) {
           alert("Impossible de supprimer cette liaison : elle est utilisée dans un ou plusieurs trajets.");
+          setLoadingDelete(false);
           return;
         }
       
@@ -236,6 +253,7 @@ export default function GestionLiaison() {
           alert("Liaison supprimée avec succès !");
           fetchLiaisons();
         }
+        setLoadingDelete(false);
       }
 
     const resetForm = () => {
@@ -248,8 +266,15 @@ export default function GestionLiaison() {
     return (
         <div className="pt-16 pb-8 w-9/12 mx-auto">
 
-            {loading ? (
-                <LoadingSpinner />
+            {loading || loadingCreate || loadingUpdate || loadingDelete ? (
+                <div className="w-full flex justify-center items-center min-h-[400px]">
+                    <LoadingSpinner text={
+                        loadingCreate ? "Création de la liaison..." :
+                        loadingUpdate ? "Mise à jour de la liaison..." :
+                        loadingDelete ? "Suppression de la liaison..." :
+                        "Chargement des liaisons..."
+                    } />
+                </div>
             ) : error ? (
                 <p className="text-red-500">{error}</p>
             ) : (

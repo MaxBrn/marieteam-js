@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function ListeTrajet() {
   const [trajetList, setTrajetList] = useState([]);
@@ -15,23 +16,27 @@ export default function ListeTrajet() {
   const [message, setMessage] = useState('');
   const [liaisons, setLiaisons] = useState([]);
   const [selectedLiaison, setSelectedLiaison] = useState('');
+  const [loadingSecteurs, setLoadingSecteurs] = useState(false);
+  const [loadingLiaisons, setLoadingLiaisons] = useState(false);
   
 
   useEffect(() => {
     const fetchSecteurs = async () => {
+      setLoadingSecteurs(true);
       const { data: secteurs, error } = await supabase.from('secteur').select('*');
       if (error) {
         console.error('Erreur lors de la récupération des secteurs:', error.message);
       } else {
         setSecteurs(secteurs);
       }
+      setLoadingSecteurs(false);
     };
     fetchSecteurs();
   }, []);
 
   useEffect(() => {
     if (!selectedSecteur) return;
-    
+    setLoadingLiaisons(true);
     const fetchLiaisons = async () => {
       const { data: liaisons, error } = await supabase
         .from('liaison')
@@ -41,7 +46,6 @@ export default function ListeTrajet() {
       if (error) {
         console.error('Erreur lors de la récupération des liaisons:', error.message);
       } else {
-        // Récupération des noms des ports associés
         const liaisonsAvecPorts = await Promise.all(
           liaisons.map(async (liaison) => {
             const { data: portDepart, error: errorDepart } = await supabase
@@ -66,6 +70,7 @@ export default function ListeTrajet() {
 
         setLiaisons(liaisonsAvecPorts);
       }
+      setLoadingLiaisons(false);
     };
 
     fetchLiaisons();
@@ -286,54 +291,71 @@ export default function ListeTrajet() {
 
   return (
     <div className="pt-16 pb-8 w-9/12 mx-auto">
-      <form className="lg:w-1/2 m-auto mb-10" onSubmit={handleSubmit}>
-      {/* Liste déroulante pour sélectionner un secteur */}
-        <select
-          value={selectedSecteur}
-          onChange={(e) => setSelectedSecteur(e.target.value)}
-          className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
-        >
-          <option value="">Sélectionner un secteur</option>
-          {secteurs.map((secteur) => (
-            <option key={secteur.id} value={secteur.id}>
-              {secteur.nom}
-            </option>
-          ))}
-        </select>
+      {loadingSecteurs ? (
+        <div className="w-full flex justify-center items-center min-h-[200px]">
+          <LoadingSpinner text="Chargement des secteurs..." />
+        </div>
+      ) : (
+        <form className="lg:w-1/2 m-auto mb-10" onSubmit={handleSubmit}>
+        {/* Liste déroulante pour sélectionner un secteur */}
+          <select
+            value={selectedSecteur}
+            onChange={(e) => setSelectedSecteur(e.target.value)}
+            className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
+          >
+            <option value="">Sélectionner un secteur</option>
+            {secteurs.map((secteur) => (
+              <option key={secteur.id} value={secteur.id}>
+                {secteur.nom}
+              </option>
+            ))}
+          </select>
 
-        <select
-          className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
-          value={selectedLiaison}
-          onChange={(e) => setSelectedLiaison(e.target.value)}
-        >
-          <option value="">Sélectionnez une liaison</option>
-          {liaisons.map((liaison) => (
-            <option key={liaison.id} value={liaison.id}>
-              {liaison.portDepart} → {liaison.portArrivee}
-            </option>
-          ))}
-        </select>
+          {selectedSecteur && (
+            loadingLiaisons ? (
+              <div className="w-full flex flex-col justify-center items-center ">
+                <LoadingSpinner text="Chargement des liaisons..." />
+              </div>
+            ) : (
+              <select
+                className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
+                value={selectedLiaison}
+                onChange={(e) => setSelectedLiaison(e.target.value)}
+              >
+                <option value="">Sélectionnez une liaison</option>
+                {liaisons.map((liaison) => (
+                  <option key={liaison.id} value={liaison.id}>
+                    {liaison.portDepart} → {liaison.portArrivee}
+                  </option>
+                ))}
+              </select>
+            )
+          )}
 
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
-        />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
+          />
 
-        
-        
-        <button
-          type="submit"
-          className="block w-full px-4 py-2 bg-sky-900 text-white rounded-md"
-        >
-          {loading ? 'Recherche en cours...' : 'Rechercher'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="block w-full px-4 py-2 bg-sky-900 text-white rounded-md"
+          >
+            {loading ? 'Recherche en cours...' : 'Rechercher'}
+          </button>
+        </form>
+      )}
       {message && <p className="text-red-500">{message}</p>}
 
       <div className="flex">
-        <div
+        {loading ? (
+          <div className="w-full flex justify-center items-center min-h-[100px]">
+            <LoadingSpinner text="Chargement des trajets..." />
+          </div>
+        ) : (
+          <div
             className="flex flex-col w-2/3 overflow-y-auto max-h-[400px] pr-4
             [&::-webkit-scrollbar]:w-1
             [&::-webkit-scrollbar-track]:rounded-full
@@ -344,28 +366,29 @@ export default function ListeTrajet() {
               height: '275px',
             }}
           >
-          {trajetList.map((trajet) => (
-            <div
-              key={trajet.id}
-              className="w-full m-auto flex rounded-md bg-blue-50 snap-start cursor-pointer"
-              onClick={() => handleTrajetClick(trajet)}
-            >
-              <div className="w-[10%] text-center border-r-4 border-white py-2">
-                <p>
-                  {trajet.heureDepart.substring(0,5)}<br />
-                  {trajet.heureArrivee.substring(0,5)}
-                </p>
+            {trajetList.map((trajet) => (
+              <div
+                key={trajet.id}
+                className="w-full m-auto flex rounded-md bg-blue-50 snap-start cursor-pointer"
+                onClick={() => handleTrajetClick(trajet)}
+              >
+                <div className="w-[10%] text-center border-r-4 border-white py-2">
+                  <p>
+                    {trajet.heureDepart.substring(0,5)}<br />
+                    {trajet.heureArrivee.substring(0,5)}
+                  </p>
+                </div>
+                <div className="w-[90%] pl-5 m-auto">
+                  <p>{trajet.nomBateau}</p>
+                  <p>{trajet.tempsTrajet}</p>
+                </div>
               </div>
-              <div className="w-[90%] pl-5 m-auto">
-                <p>{trajet.nomBateau}</p>
-                <p>{trajet.tempsTrajet}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-          {selectedTrajet ? (
-            <>
+            ))}
+          </div>
+        )}
+
+        {selectedTrajet ? (
+          <>
             <div className="w-1/3 m-auto rounded-md bg-blue-50 p-3">
               <div>
                 <p>
@@ -374,10 +397,9 @@ export default function ListeTrajet() {
                 </p>
               </div>
               <div className="py-5 w-full border-b-4 border-white">
-              <Link href={`/reservation/${selectedTrajet.num}`} className="p-3 bg-sky-900 rounded-xl text-white w-[80%] m-auto block text-center">
-                Réserver ce trajet
-              </Link>
-
+                <Link href={`/reservation/${selectedTrajet.num}`} className="p-3 bg-sky-900 rounded-xl text-white w-[80%] m-auto block text-center">
+                  Réserver ce trajet
+                </Link>
               </div>
               <div className="pt-5">
                 <p>
@@ -391,12 +413,10 @@ export default function ListeTrajet() {
                 </ul>
               </div>
             </div>
-              
-            </>
-          ) : (
-            <></>
-          )}
-        
+          </>
+        ) : (
+          <></>
+        )}
       </div>
     </div>
   );

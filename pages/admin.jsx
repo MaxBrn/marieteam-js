@@ -207,7 +207,9 @@ export default function Admin() {
             
             <div className="flex flex-col lg:flex-row gap-6">
                 {loading ? (
-                    <LoadingSpinner />
+                    <div className="w-full flex justify-center items-center min-h-[400px]">
+                        <LoadingSpinner text="Chargement des données..." />
+                    </div>
                 ) : (
                     <>
                         {/* Détails et Stats */}

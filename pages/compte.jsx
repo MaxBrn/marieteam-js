@@ -5,13 +5,11 @@ import { supabase } from "@/lib/supabase";
 import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 import { IoTicket } from "react-icons/io5";
 import { BsTicketDetailed } from "react-icons/bs";
-
-
-
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Compte = () => {
   const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [userData, setUserData] = useState({
@@ -21,6 +19,9 @@ const Compte = () => {
     email: "",
     reservation: [],
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5); // Nombre d'éléments par page
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' pour ascendant, 'desc' pour descendant
 
   const fetchUser = async () => {
     try {
@@ -113,7 +114,8 @@ const Compte = () => {
   };
 
   useEffect(() => {
-    fetchUser();
+    setLoading(true);
+    fetchUser().finally(() => setLoading(false));
   }, []);
 
   const handleChange = (key, value) => {
@@ -148,95 +150,195 @@ const Compte = () => {
 
   const closeModal = () => setSelectedReservation(null);
 
+  // Fonction pour trier les réservations
+  const sortedReservations = [...userData.reservation].sort((a, b) => {
+    const dateA = new Date(a.date.split(' ')[0].split('/').reverse().join('-'));
+    const dateB = new Date(b.date.split(' ')[0].split('/').reverse().join('-'));
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+  });
+
+  // Calcul des indices pour la pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedReservations.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Fonction pour changer de page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Fonction pour changer l'ordre de tri
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    setCurrentPage(1); // Réinitialiser à la première page lors du changement de tri
+  };
+
+  // Fonction pour générer les numéros de page à afficher
+  const getPageNumbers = () => {
+    const totalPages = Math.ceil(sortedReservations.length / itemsPerPage);
+    const pageNumbers = [];
+    
+    // Calculer la plage de pages autour de la page courante
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    // Ajuster si on est proche du début
+    if (currentPage <= 2) {
+      endPage = Math.min(5, totalPages);
+    }
+    
+    // Ajuster si on est proche de la fin
+    if (currentPage >= totalPages - 1) {
+      startPage = Math.max(1, totalPages - 4);
+    }
+    
+    // Ajouter les pages
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
+  };
+
   return (
-    <div className="min-h-screen bg-white-100 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl w-full p-6 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Mon Compte</h1>
-          {!editing && (
-            <button
-              className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none flex items-center justify-center ml-4"
-              onClick={() => setEditing(true)}
-            >
-              <AiFillEdit className="text-xl" />
-            </button>
-          )}
+    <>
+      {loading ? (
+        <div className="w-full flex justify-center items-center min-h-[500px]">
+          <LoadingSpinner text="Chargement des données utilisateur..." />
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-grow">
-          {["prenom", "nom", "email"].map((key, index) => (
-            <div
-              key={key}
-              className={`bg-blue-50 p-4 rounded shadow ${
-                index === 2 ? "sm:col-span-2" : ""
-              }`}
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-500 capitalize">
-                  {key.replace("_", " ")}
-                </p>
-                {!editing ? (
-                  <p className="text-lg font-semibold text-gray-800">
-                    {userData[key]}
-                  </p>
-                ) : (
-                  <input
-                    type={key === "email" ? "email" : "text"}
-                    value={userData[key]}
-                    onChange={(e) => handleChange(key, e.target.value)}
-                    className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                )}
-              </div>
+      ) : (
+        <div className="min-h-screen bg-white-100 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl w-full p-6 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-800">Mon Compte</h1>
+              {!editing && (
+                <button
+                  className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none flex items-center justify-center ml-4"
+                  onClick={() => setEditing(true)}
+                >
+                  <AiFillEdit className="text-xl" />
+                </button>
+              )}
             </div>
-          ))}
-        </div>
 
-
-
-        {editing && (
-          <div className="flex justify-center mt-8">
-            <button
-              className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none"
-              onClick={handleSave}
-              disabled={loading}
-            >
-              {loading ? "Enregistrement..." : "Valider"}
-            </button>
-          </div>
-        )}
-
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Mes Réservations</h2>
-          {userData.reservation && userData.reservation.length > 0 ? (
-            <div className="space-y-4">
-              {userData.reservation.map((res, index) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-grow">
+              {["prenom", "nom", "email"].map((key, index) => (
                 <div
-                  key={index}
-                  className="p-4 bg-blue-50 rounded-md shadow flex justify-between items-center"
+                  key={key}
+                  className={`bg-blue-50 p-4 rounded shadow ${
+                    index === 2 ? "sm:col-span-2" : ""
+                  }`}
                 >
                   <div>
-                    <p className="">
-                      {res.depart_nom} - {res.arrivee_nom} le {res.date}
+                    <p className="text-sm font-medium text-gray-500 capitalize">
+                      {key.replace("_", " ")}
                     </p>
+                    {!editing ? (
+                      <p className="text-lg font-semibold text-gray-800">
+                        {userData[key]}
+                      </p>
+                    ) : (
+                      <input
+                        type={key === "email" ? "email" : "text"}
+                        value={userData[key]}
+                        onChange={(e) => handleChange(key, e.target.value)}
+                        className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    )}
                   </div>
-                  <button
-                    onClick={() => setSelectedReservation(res)}
-                  >
-                    <BsTicketDetailed className="text-2xl"/>
-                  </button>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-500">Aucune réservation trouvée.</p>
-          )}
+
+            {editing && (
+              <div className="flex justify-center mt-8">
+                <button
+                  className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none"
+                  onClick={handleSave}
+                  disabled={loading}
+                >
+                  {loading ? "Enregistrement..." : "Valider"}
+                </button>
+              </div>
+            )}
+
+            <div className="mt-8">
+              <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Mes Réservations</h2>
+              <button 
+                onClick={toggleSortOrder} 
+                className="mb-4 px-4 py-2 bg-zinc-700 text-white rounded shadow hover:bg-zinc-600 focus:outline-none"
+              >
+                Trier par date {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+              </div>
+              
+              {currentItems.length > 0 ? (
+                <div className="space-y-4">
+                  {currentItems.map((res, index) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-blue-50 rounded-md shadow flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="">
+                          {res.depart_nom} - {res.arrivee_nom} le {res.date}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedReservation(res)}
+                      >
+                        <BsTicketDetailed className="text-2xl"/>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">Aucune réservation trouvée.</p>
+              )}
+              <div className="flex justify-center items-center mt-4 space-x-2">
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === 1 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                >
+                  ←
+                </button>
+                
+                {getPageNumbers().map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    onClick={() => paginate(pageNumber)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === pageNumber 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === Math.ceil(sortedReservations.length / itemsPerPage)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === Math.ceil(sortedReservations.length / itemsPerPage)
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                >
+                  →
+                </button>
+              </div>
+            </div>
+
+            {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+          </div>
         </div>
-
-        
-
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-      </div>
+      )}
 
       {/* Modal pour les détails de réservation */}
       {selectedReservation && (
@@ -306,8 +408,7 @@ const Compte = () => {
           </div>
         </div>
       )}
-
-    </div>
+    </>
   );
 };
 
