@@ -3,11 +3,13 @@ import Image from "next/image";
 import { MdOutlineSupervisorAccount } from "react-icons/md";
 import Cookie from "js-cookie";
 import Link from 'next/link';
+import Notification from './Notification';
 
 export default function NavBar() {
   // État pour savoir si le menu est ouvert ou non
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [token, setToken] = useState(null);  // Retirer le type "string | null"
+  const [notification, setNotification] = useState(null);
 
   // Référence au menu déroulant pour vérifier si le clic est en dehors
   const menuRef = useRef(null); // Retirer le type "HTMLDivElement | null"
@@ -22,6 +24,13 @@ export default function NavBar() {
     if (menuRef.current && !menuRef.current.contains(event.target)) {
       setIsMenuOpen(false); // Fermer le menu si le clic est à l'extérieur
     }
+  };
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
   };
 
   // Utilisation de useEffect pour écouter les clics en dehors du menu
@@ -52,6 +61,12 @@ export default function NavBar() {
 
   return (
     <nav className="flex bg-blue-50 text-slate-500 py-4 lg:w-9/12 w-full m-auto lg:mt-3 lg:rounded-xl">
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+        />
+      )}
       <div className="flex gap-8 justify-between w-full">
         <div className="ml-10">
           <Link href="/">
@@ -110,8 +125,9 @@ export default function NavBar() {
                 <Link
                   href="/"
                   onClick={() => {
-                    Cookie.remove("token"); // Déconnexion
-                    setToken(null); // Mettre à jour l'état du token
+                    Cookie.remove("token");
+                    setToken(null);
+                    showNotification("success", "Déconnexion réussie");
                   }}
                   className="block px-4 py-2 text-lg text-slate-600 hover:bg-blue-100 rounded-b-lg"
                 >

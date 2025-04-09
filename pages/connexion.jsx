@@ -4,19 +4,27 @@ import { supabase } from '@/lib/supabase';  // Assurez-vous que vous avez bien c
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 import Cookie from 'js-cookie';
+import Notification from '@/components/Notification';
 
 const LoginPage = () => {
   const [mail, setMail] = useState('');
   const [mdp, setMdp] = useState('');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [notification, setNotification] = useState(null);
   const router = useRouter();
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
-    setMessage('');
+    setError('');
 
     try {
       // Appel à Supabase pour se connecter avec l'email et le mot de passe
@@ -25,10 +33,11 @@ const LoginPage = () => {
         password: mdp,
       });
 
-      setLoading(false);
+      
 
       if (error) {
-        setMessage(error.message || 'Erreur de connexion.');
+        setError(error.message || 'Erreur de connexion.');
+        setLoading(false);
         return;
       }
 
@@ -38,28 +47,37 @@ const LoginPage = () => {
       // Stocker le token dans un cookie
       Cookies.set('token', token, { expires: 1, path: '/' });
 
-      // Rediriger l'utilisateur vers la page d'accueil
-      const reserveTrajet = Cookie.get('resTrajet');
-      if(reserveTrajet) {
-        router.push(`/reservation/${reserveTrajet}`);
-        Cookie.remove('resTrajet');
-      }
-      else {
-        router.push('/');
-      }
+      showNotification("success", "Connexion réussie");
+
+      // Attendre que la notification soit visible avant la redirection
+      setTimeout(() => {
+        const reserveTrajet = Cookie.get('resTrajet');
+        if(reserveTrajet) {
+          router.push(`/reservation/${reserveTrajet}`);
+          Cookie.remove('resTrajet');
+        }
+        else {
+          router.push('/');
+        }
+      }, 500);
       
     } catch (error) {
       setLoading(false);
-      setMessage('Une erreur est survenue.');
+      setError('Une erreur est survenue lors de la connexion.');
       console.log(error);
     }
   };
 
   return (
     <div className="flex justify-center items-center p-28">
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+        />
+      )}
       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-center">Connexion</h1>
-        {message && <p className="text-red-500 text-center">{message}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="mail" className="block text-sm font-medium text-gray-700">Email</label>
@@ -84,6 +102,10 @@ const LoginPage = () => {
               className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
             />
           </div>
+
+          {error && (
+            <p className="text-red-500 text-center">{error}</p>
+          )}
 
           <div className="flex justify-center">
             <button

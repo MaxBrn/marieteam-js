@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router'; // Utilisé pour la navigation après inscription
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';  // Assurez-vous d'importer le client Supabase configuré
+import Notification from '@/components/Notification';
 
 const RegisterPage = () => {
   // State pour chaque champ du formulaire
@@ -10,23 +11,30 @@ const RegisterPage = () => {
   const [mail, setMail] = useState('');
   const [mdp, setMdp] = useState('');
   const [confirmMdp, setConfirmMdp] = useState('');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false); // Pour indiquer si la soumission est en cours
+  const [notification, setNotification] = useState(null);
+  const [passwordError, setPasswordError] = useState('');
 
   const router = useRouter(); // Pour naviguer après l'inscription (par exemple, vers la page de connexion)
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
 
   // Fonction de soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Vérifier que les mots de passe correspondent
     if (mdp !== confirmMdp) {
-      setMessage('Les mots de passe ne correspondent pas.');
+      setPasswordError('Les mots de passe ne correspondent pas.');
       return;
     }
 
+    setPasswordError('');
     setLoading(true);
-    setMessage('');
 
     try {
       // Appel à Supabase pour créer un utilisateur
@@ -47,24 +55,34 @@ const RegisterPage = () => {
       setLoading(false);
 
       if (error) {
-        setMessage(error.message || 'Une erreur est survenue.');
+        showNotification("error", error.message || 'Une erreur est survenue.');
         return;
       }
 
-      // Si tout est OK, rediriger l'utilisateur vers la page de connexion
-      router.push('/connexion');
+      showNotification("success", "Inscription réussie ! Redirection vers la page de connexion...");
+      
+      // Attendre que la notification soit visible avant la redirection
+      setTimeout(() => {
+        router.push('/connexion');
+      }, 1000);
+
     } catch (error) {
       setLoading(false);
-      setMessage('Une erreur est survenue.');
+      showNotification("error", "Une erreur est survenue lors de l'inscription.");
       console.log(error);
     }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen">
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+        />
+      )}
       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-center">Inscription</h1>
-        {message && <p className="text-red-500 text-center">{message}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           
           <div>
@@ -123,6 +141,9 @@ const RegisterPage = () => {
               required
               className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
             />
+            {passwordError && (
+              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+            )}
           </div>
 
           <div className="flex justify-center">

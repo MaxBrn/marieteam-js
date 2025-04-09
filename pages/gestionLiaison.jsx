@@ -9,6 +9,7 @@ import { MdDelete } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
 import { IoMdAdd } from "react-icons/io";
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Notification from '@/components/Notification';
 
 export default function GestionLiaison() {
     const [liaisons, setLiaisons] = useState([]);
@@ -26,6 +27,7 @@ export default function GestionLiaison() {
     const [loadingCreate, setLoadingCreate] = useState(false);
     const [loadingUpdate, setLoadingUpdate] = useState(false);
     const [loadingDelete, setLoadingDelete] = useState(false);
+    const [notification, setNotification] = useState(null);
 
     const fetchSecteurs = async () => {
         setLoading(true);
@@ -108,24 +110,31 @@ export default function GestionLiaison() {
         fetchSecteurs();
     }, []);
 
+    const showNotification = (type, message) => {
+        setNotification({ type, message });
+        setTimeout(() => {
+            setNotification(null);
+        }, 3000);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoadingCreate(true);
         if (selectedSecteur !== "" && selectedPortArrivee !== "" && selectedPortDepart !== "" && distance !== "") {
             if (selectedPortArrivee === selectedPortDepart) {
-                alert("Le port d'arrivée ne peut pas être le même que celui de départ");
+                showNotification("error", "Le port d'arrivée ne peut pas être le même que celui de départ");
                 setLoadingCreate(false);
                 return;
             }
             if (distance <= 0) {
-                alert("Une liaison ne peut pas avoir une distance inférieure à 0");
+                showNotification("error", "Une liaison ne peut pas avoir une distance inférieure à 0");
                 setLoadingCreate(false);
                 return;
             }
             try {
                 const exist = await isExisting(selectedSecteur, selectedPortDepart, selectedPortArrivee);
                 if (exist) {
-                    alert('La liaison existe déjà');
+                    showNotification("error", "La liaison existe déjà");
                 } else {
                     const { data, error } = await supabase
                         .from("liaison")
@@ -136,21 +145,21 @@ export default function GestionLiaison() {
                             distance: Number(distance),
                         }]);
                     if (error) {
-                        alert("Erreur d'insertion :", error.message);
+                        showNotification("error", `Erreur d'insertion : ${error.message}`);
                     } else {
-                        alert("Liaison créée :", data);
+                        showNotification("success", "Liaison créée avec succès");
                         fetchLiaisons();
                         resetForm();
                         setIsAdding(false);
                     }
                 }
             } catch (error) {
-                setMessage(error.message);
+                showNotification("error", error.message);
             } finally {
                 setLoadingCreate(false);
             }
         } else {
-            alert("Veuillez remplir les champs");
+            showNotification("error", "Veuillez remplir tous les champs");
             setLoadingCreate(false);
         }
     };
@@ -169,49 +178,47 @@ export default function GestionLiaison() {
         setLoadingUpdate(true);
         if (selectedSecteur !== "" && selectedPortArrivee !== "" && selectedPortDepart !== "" && distance !== "") {
             if (selectedPortArrivee === selectedPortDepart) {
-                alert("Le port d'arrivée ne peut pas être le même que celui de départ");
+                showNotification("error", "Le port d'arrivée ne peut pas être le même que celui de départ");
                 setLoadingUpdate(false);
                 return;
             }
             if (distance <= 0) {
-                alert("Une liaison ne peut pas avoir une distance inférieure à 0");
+                showNotification("error", "Une liaison ne peut pas avoir une distance inférieure à 0");
                 setLoadingUpdate(false);
                 return;
             }
             try {
                 const exist = await isExisting(selectedSecteur, selectedPortDepart, selectedPortArrivee);
                 if (exist && exist.code != editingLiaison.code) {
-                    alert('La liaison existe déjà');
-                }
-                else {
-                    const { data, error } = await supabase
-                    .from('liaison')
-                    .update({
-                        secteur_id: selectedSecteur,
-                        depart_id: selectedPortDepart,
-                        arrivee_id: selectedPortArrivee,
-                        distance: Number(distance)
-                    })
-                    .eq('code', editingLiaison.code);
-
-                if (error) {
-                    alert("Erreur de mise à jour :", error.message);
+                    showNotification("error", "La liaison existe déjà");
                 } else {
-                    alert("Liaison mise à jour !");
-                    fetchLiaisons();
-                    resetForm();
-                    setIsEditing(false);
-                    setEditingLiaison(null);
+                    const { data, error } = await supabase
+                        .from('liaison')
+                        .update({
+                            secteur_id: selectedSecteur,
+                            depart_id: selectedPortDepart,
+                            arrivee_id: selectedPortArrivee,
+                            distance: Number(distance)
+                        })
+                        .eq('code', editingLiaison.code);
+
+                    if (error) {
+                        showNotification("error", `Erreur de mise à jour : ${error.message}`);
+                    } else {
+                        showNotification("success", "Liaison mise à jour avec succès");
+                        fetchLiaisons();
+                        resetForm();
+                        setIsEditing(false);
+                        setEditingLiaison(null);
+                    }
                 }
-                }
-                
             } catch (error) {
-                console.error('Erreur de mise à jour:', error);
+                showNotification("error", `Erreur de mise à jour : ${error.message}`);
             } finally {
                 setLoadingUpdate(false);
             }
         } else {
-            alert("Veuillez remplir tous les champs");
+            showNotification("error", "Veuillez remplir tous les champs");
             setLoadingUpdate(false);
         }
     };
@@ -230,31 +237,30 @@ export default function GestionLiaison() {
 
     async function deleteLiaison(code) {
         setLoadingDelete(true);
-        // Vérifie si la liaison est utilisée dans un trajet
         const { data: trajets, error: errorTrajets } = await supabase
-          .from('trajet')
-          .select('*')
-          .eq('idLiaison', code); // ou autre colonne selon ta structure
-      
+            .from('trajet')
+            .select('*')
+            .eq('idLiaison', code);
+
         if (trajets && trajets.length > 0) {
-          alert("Impossible de supprimer cette liaison : elle est utilisée dans un ou plusieurs trajets.");
-          setLoadingDelete(false);
-          return;
+            showNotification("error", "Impossible de supprimer cette liaison : elle est utilisée dans un ou plusieurs trajets");
+            setLoadingDelete(false);
+            return;
         }
-      
+
         const { error } = await supabase
-          .from('liaison')
-          .delete()
-          .eq('code', code);
-      
+            .from('liaison')
+            .delete()
+            .eq('code', code);
+
         if (error) {
-          console.error("Erreur de suppression :", error.message);
+            showNotification("error", `Erreur de suppression : ${error.message}`);
         } else {
-          alert("Liaison supprimée avec succès !");
-          fetchLiaisons();
+            showNotification("success", "Liaison supprimée avec succès");
+            fetchLiaisons();
         }
         setLoadingDelete(false);
-      }
+    }
 
     const resetForm = () => {
         setSelectedSecteur('');
@@ -265,6 +271,12 @@ export default function GestionLiaison() {
 
     return (
         <div className="pt-16 pb-8 w-9/12 mx-auto">
+            {notification && (
+                <Notification
+                    type={notification.type}
+                    message={notification.message}
+                />
+            )}
 
             {loading || loadingCreate || loadingUpdate || loadingDelete ? (
                 <div className="w-full flex justify-center items-center min-h-[400px]">

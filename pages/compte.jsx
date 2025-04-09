@@ -6,10 +6,13 @@ import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 import { IoTicket } from "react-icons/io5";
 import { BsTicketDetailed } from "react-icons/bs";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Notification from "@/components/Notification";
 
 const Compte = () => {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [notification, setNotification] = useState(null);
   const [error, setError] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [userData, setUserData] = useState({
@@ -124,8 +127,9 @@ const Compte = () => {
 
   const handleSave = async () => {
     try {
-      setLoading(true);
+      setUpdating(true);
       setError(null);
+      setNotification(null);
 
       const { error } = await supabase.auth.updateUser({
         email: userData.email,
@@ -139,12 +143,23 @@ const Compte = () => {
       if (error) throw error;
 
       await fetchUser();
-
+      setNotification({
+        type: "success",
+        message: "Modifications enregistrées avec succès",
+      });
       setEditing(false);
+      
+      // Masquer la notification après 3 secondes
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
     } catch (err) {
-      setError(err.message);
+      setNotification({
+        type: "error",
+        message: err.message,
+      });
     } finally {
-      setLoading(false);
+      setUpdating(false);
     }
   };
 
@@ -251,13 +266,27 @@ const Compte = () => {
             {editing && (
               <div className="flex justify-center mt-8">
                 <button
-                  className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none"
+                  className="bg-zinc-700 text-white px-4 py-2 rounded shadow hover:bg-zinc-600 focus:outline-none flex items-center space-x-2"
                   onClick={handleSave}
-                  disabled={loading}
+                  disabled={updating}
                 >
-                  {loading ? "Enregistrement..." : "Valider"}
+                  {updating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Mise à jour...</span>
+                    </>
+                  ) : (
+                    "Valider"
+                  )}
                 </button>
               </div>
+            )}
+
+            {notification && (
+              <Notification
+                type={notification.type}
+                message={notification.message}
+              />
             )}
 
             <div className="mt-8">

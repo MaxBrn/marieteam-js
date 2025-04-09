@@ -6,13 +6,23 @@ import Cookie from "js-cookie";
 import Cookies from "js-cookie";
 import { IoTicket } from "react-icons/io5";
 import { BsTicketDetailed } from "react-icons/bs";
+import LoadingSpinner from '@/components/LoadingSpinner';
+import Notification from '@/components/Notification';
 
 export default function Reservation({ trajet }) {
   const [done, setDone] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
   const router = useRouter();
   
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
+
   const calculateTotal = () => {
     return types.reduce((total, { key, tarif }) => {
       return total + formData[key] * tarif;
@@ -21,7 +31,7 @@ export default function Reservation({ trajet }) {
 
   const tokenFromCookie = Cookie.get("token");
   if(!tokenFromCookie) {
-    alert('Veuillez vous connecter !');
+    showNotification("error", "Veuillez vous connecter !");
     Cookies.set('resTrajet', trajet.num, { expires: 1, path: '/' });
     router.push('/connexion');
   }
@@ -83,7 +93,7 @@ export default function Reservation({ trajet }) {
       (name === 'adulte' || name === 'junior' || name === 'enfant') &&
       totalPassagers > trajet.placePassager
     ) {
-      alert('Nombre de passagers dépassé !');
+      showNotification("error", "Nombre de passagers dépassé !");
       return;
     }
   
@@ -91,7 +101,7 @@ export default function Reservation({ trajet }) {
       (name === 'voiture' || name === 'camionnette') &&
       totalPetitsVehicules > trajet.placePetitVehicule
     ) {
-      alert('Nombre de petits véhicules dépassé !');
+      showNotification("error", "Nombre de petits véhicules dépassé !");
       return;
     }
   
@@ -99,7 +109,7 @@ export default function Reservation({ trajet }) {
       (name === 'campingCar' || name === 'camion') &&
       totalGrandsVehicules > trajet.placeGrandVehicule
     ) {
-      alert('Nombre de grands véhicules dépassé !');
+      showNotification("error", "Nombre de grands véhicules dépassé !");
       return;
     }
   
@@ -204,8 +214,9 @@ export default function Reservation({ trajet }) {
       formData.camion;
 
     if (totalQuantities === 0) {
-      setErrorMessage('Veuillez sélectionner au moins une place avant de réserver.');
+      showNotification("error", "Veuillez sélectionner au moins une place avant de réserver.");
       setIsSubmitting(false);
+      setLoading(false);
       return;
     }
 
@@ -222,6 +233,7 @@ export default function Reservation({ trajet }) {
 
     if (!confirmation) {
       setIsSubmitting(false);
+      setLoading(false);
       return;
     }
 
@@ -320,10 +332,11 @@ export default function Reservation({ trajet }) {
       const reservation = await recupRes(numReservation);
       setSelectedReservation(reservation);
       setDone(true);
+      showNotification("success", "Réservation effectuée avec succès !");
       
     } catch (error) {
       console.error(error);
-      setErrorMessage('Une erreur est survenue lors de la réservation.');
+      showNotification("error", "Une erreur est survenue lors de la réservation.");
     } finally {
       setIsSubmitting(false);
       setLoading(false);
@@ -334,7 +347,13 @@ export default function Reservation({ trajet }) {
     <>
     {!loading ? (
       <>
-{!done ? (
+      {notification && (
+        <Notification
+          type={notification.type}
+          message={notification.message}
+        />
+      )}
+      {!done ? (
         <div className="flex items-center justify-center min-h-screen py-16">
           <div className="w-full max-w-lg p-8 shadow-md rounded-lg bg-blue-50">
             <p className="text-lg font-bold mb-4">
@@ -508,8 +527,8 @@ export default function Reservation({ trajet }) {
       </>
     ):
     (
-      <div className='flex items-center justify-center  py-16'>
-        <p className='text-center'>Chargement...</p>
+      <div className="w-full flex justify-center items-center min-h-[500px]">
+        <LoadingSpinner text="Réservation en cours ..." />
       </div>
     )
 
