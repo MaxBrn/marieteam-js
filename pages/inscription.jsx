@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'; // Utilisé pour la navigation après i
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';  // Assurez-vous d'importer le client Supabase configuré
 import Notification from '@/components/Notification';
+import { AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
 
 const RegisterPage = () => {
   // State pour chaque champ du formulaire
@@ -14,6 +15,7 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false); // Pour indiquer si la soumission est en cours
   const [notification, setNotification] = useState(null);
   const [passwordError, setPasswordError] = useState('');
+  const [done, setDone] = useState(false);
 
   const router = useRouter(); // Pour naviguer après l'inscription (par exemple, vers la page de connexion)
 
@@ -60,11 +62,8 @@ const RegisterPage = () => {
       }
 
       showNotification("success", "Inscription réussie ! Redirection vers la page de connexion...");
+      setDone(true);
       
-      // Attendre que la notification soit visible avant la redirection
-      setTimeout(() => {
-        router.push('/connexion');
-      }, 1000);
 
     } catch (error) {
       setLoading(false);
@@ -74,16 +73,39 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex justify-center  py-10">
       {notification && (
         <Notification
           type={notification.type}
           message={notification.message}
         />
       )}
-      <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center">Inscription</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="w-full max-w-md space-y-4 bg-white rounded-lg shadow-lg">
+        {done ?(
+          <div className='w-full flex flex-col gap-3'>
+          <div
+            className= "bg-green-500 text-white px-4 py-4 rounded-t flex items-center space-x-2 "
+          >
+            <AiOutlineCheckCircle className="text-xl"/>
+            <span>Inscription réussie</span>
+          </div>
+          <hr className="h-px border border-slate-300 w-2/3 mx-auto" />
+          <div className='flex flex-col gap-3 px-4 pb-4'>
+          <h1 className='text-center'>Encore une dernière chose !</h1>
+            <p>Vous allez recevoir sous peu un mail contenant un lien permettant de vérifier votre compte.
+              Sans ça vous ne pourrez pas accèder au site Marieteam !
+            </p>
+            <Link href="/connexion" className=" w-1/3 text-center mx-auto p-2 mt-4 bg-sky-900 rounded-xl text-white hover:bg-sky-800 transition">
+              Compris
+            </Link>
+          </div>
+            
+          </div>
+          
+        ):(
+          <div className='p-8'>
+          <h1 className="text-2xl font-bold text-center">Inscription</h1>
+          <form onSubmit={handleSubmit} className="space-y-4">
           
           <div>
             <label htmlFor="nom" className="block text-sm font-medium text-gray-700">Nom</label>
@@ -163,6 +185,9 @@ const RegisterPage = () => {
             <Link href="/connexion" className="text-sky-900 hover:underline">Connectez-vous</Link>
           </p>
         </div>
+          </div>
+        )}
+        
       </div>
     </div>
   );
