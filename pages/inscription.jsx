@@ -16,9 +16,10 @@ const RegisterPage = () => {
   const [notification, setNotification] = useState(null);
   const [passwordError, setPasswordError] = useState('');
   const [done, setDone] = useState(false);
+  const [guidelines, setGuidelines] = useState(null);
 
   const router = useRouter(); // Pour naviguer après l'inscription (par exemple, vers la page de connexion)
-
+ 
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => {
@@ -26,10 +27,41 @@ const RegisterPage = () => {
     }, 3000);
   };
 
+  const verifMdp = (mdp) => {
+    setMdp(mdp);
+    const minLength = 13;
+    const hasUpperCase = /[A-Z]/.test(mdp);
+    const hasLowerCase = /[a-z]/.test(mdp);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(mdp);
+  
+    if (mdp.length >= minLength && hasLowerCase && hasUpperCase && hasSpecialChar) {
+      setGuidelines(
+        <p className="text-green-600 font-medium pt-4">Mot de passe valide</p>
+      );
+      return true;
+    } else {
+      setGuidelines(
+        <div className='pt-4'>
+          <p className="mb-1">Un mot de passe valide doit contenir :</p>
+          <ul className="list-disc pl-5 space-y-1">
+            {mdp.length < minLength && <li>13 caractères minimum</li>}
+            {!hasUpperCase && <li>Une majuscule minimum</li>}
+            {!hasLowerCase && <li>Une minuscule minimum</li>}
+            {!hasSpecialChar && <li>Un caractère spécial minimum</li>}
+          </ul>
+        </div>
+      );
+      return false;
+    }
+  };
   // Fonction de soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if(!verifMdp(mdp)) {
+      setPasswordError('Le mot de passe est non valide');
+      return;
+    }
     if (mdp !== confirmMdp) {
       setPasswordError('Les mots de passe ne correspondent pas.');
       return;
@@ -147,10 +179,13 @@ const RegisterPage = () => {
               id="mdp"
               type="password"
               value={mdp}
-              onChange={(e) => setMdp(e.target.value)}
+              onChange={(e) => verifMdp(e.target.value)}
               required
               className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
             />
+            <div className='text-sm text-slate-500'>
+              {guidelines}
+            </div>
           </div>
 
           <div>
