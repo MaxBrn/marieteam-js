@@ -3,6 +3,7 @@ import Image from "next/image";
 import { MdOutlineSupervisorAccount } from "react-icons/md";
 import Cookie from "js-cookie";
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import Notification from './Notification';
 import { supabase } from '@/lib/supabase'; // Assure-toi que Supabase est bien configuré
 
@@ -12,6 +13,7 @@ export default function NavBar() {
   const [role, setRole] = useState(null); // Nouveau state pour stocker le rôle de l'utilisateur
   const [notification, setNotification] = useState(null);
   const menuRef = useRef(null);
+  const router = useRouter();
 
   const toggleMenu = () => {
     setIsMenuOpen((prevState) => !prevState);
@@ -30,31 +32,56 @@ export default function NavBar() {
     }, 3000);
   };
 
-  useEffect(() => {
+  // Fonction pour récupérer les données utilisateur
+  const fetchUserData = async () => {
     if (typeof window !== "undefined") {
       const tokenFromCookie = Cookie.get("token");
       setToken(tokenFromCookie || null);
 
-      // Récupérer les métadonnées de l'utilisateur
-      const fetchUserRole = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const userRole = user?.user_metadata?.role; // Récupère le rôle depuis les métadonnées
-        setRole(userRole); // Stocke le rôle dans l'état
-      };
-
-      if(tokenFromCookie) {
-        fetchUserRole();
+      if (tokenFromCookie) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const userRole = user?.user_metadata?.role;
+          setRole(userRole);
+        } catch (error) {
+          console.error("Erreur lors de la récupération du rôle:", error);
+          setRole(null);
+        }
+      } else {
+        setRole(null);
       }
-
-      
     }
+  };
 
+  // Effet pour récupérer les données utilisateur au chargement initial
+  useEffect(() => {
+    fetchUserData();
     document.addEventListener("click", handleClickOutside);
 
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
+
+  // Effet pour rafraîchir les données utilisateur lors des changements de route
+  useEffect(() => {
+    fetchUserData();
+  }, [router.pathname]);
+
+  // Fonction de déconnexion
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      Cookie.remove("token");
+      setToken(null);
+      setRole(null);
+      showNotification("success", "Déconnexion réussie");
+      router.push('/');
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      showNotification("error", "Erreur lors de la déconnexion");
+    }
+  };
 
   return (
     <nav className="flex bg-blue-50 text-slate-500 py-4 lg:w-9/12 w-full m-auto lg:mt-3 lg:rounded-xl">
@@ -82,7 +109,7 @@ export default function NavBar() {
           </Link>
 
           {/* Affiche le bouton "Dashboard" uniquement si l'utilisateur est un admin */}
-          {role === 'admin' && (
+          {role === 'admin' && token && (
             <Link href="/admin" className="text-lg">
               Dashboard
             </Link>
@@ -126,17 +153,12 @@ export default function NavBar() {
                 >
                   Mon compte
                 </Link>
-                <Link
-                  href="/"
-                  onClick={() => {
-                    Cookie.remove("token");
-                    setToken(null);
-                    showNotification("success", "Déconnexion réussie");
-                  }}
-                  className="block px-4 py-2 text-lg text-slate-600 hover:bg-blue-100 rounded-b-lg"
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-lg text-slate-600 hover:bg-blue-100 rounded-b-lg"
                 >
                   Déconnexion
-                </Link>
+                </button>
               </div>
             )}
           </div>

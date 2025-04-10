@@ -7,7 +7,10 @@ import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { FiCalendar, FiBarChart2, FiDollarSign } from 'react-icons/fi';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useRouter } from 'next/router';
+
 export default function Admin() {
+    const router = useRouter();
     const [prixTotal, setPrixTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -16,6 +19,39 @@ export default function Admin() {
     const [revenusParDate, setRevenusParDate] = useState({});
     const [passagerParDate, setPassagerParDate] = useState({});
     const [totalPassagers, setTotalPassagers] = useState({ catA: 0, catB: 0, catC: 0 });
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isChecking, setIsChecking] = useState(true);
+
+    // Vérification du rôle administrateur
+    useEffect(() => {
+        const checkAdminRole = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const userRole = user?.user_metadata?.role;
+                
+                if (userRole !== 'admin') {
+                    router.push('/');
+                    return;
+                }
+                
+                setIsAuthorized(true);
+            } catch (error) {
+                console.error("Erreur lors de la vérification du rôle:", error);
+                router.push('/');
+            } finally {
+                setIsChecking(false);
+            }
+        };
+
+        checkAdminRole();
+    }, [router]);
+
+    // Effet pour récupérer les revenus
+    useEffect(() => {
+        if (isAuthorized) {
+            fetchRevenus();
+        }
+    }, [startDate, endDate, isAuthorized]);
 
     const fetchRevenus = async () => {
         setLoading(true);
@@ -138,10 +174,6 @@ export default function Admin() {
         }
     };
 
-    useEffect(() => {
-        fetchRevenus();
-    }, [startDate, endDate]);
-
     // Génération des dates pour le graphique
     const allDates = [];
     let currentDate = new Date(startDate);
@@ -168,6 +200,15 @@ export default function Admin() {
         catB: passagerParDate[date]?.catB || 0,
         catC: passagerParDate[date]?.catC || 0
     }));
+
+    // Si la vérification est en cours ou si l'utilisateur n'est pas autorisé, afficher un chargement
+    if (isChecking || !isAuthorized) {
+        return (
+            <div className="w-full h-screen flex justify-center items-center">
+                <LoadingSpinner text="Vérification des droits d'accès..." />
+            </div>
+        );
+    }
 
     return (
         <div className="pt-16 pb-8 w-9/12 mx-auto">

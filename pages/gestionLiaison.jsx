@@ -10,8 +10,10 @@ import { FaEdit } from "react-icons/fa";
 import { IoMdAdd } from "react-icons/io";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Notification from '@/components/Notification';
+import { useRouter } from 'next/router';
 
 export default function GestionLiaison() {
+    const router = useRouter();
     const [liaisons, setLiaisons] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -28,6 +30,32 @@ export default function GestionLiaison() {
     const [loadingUpdate, setLoadingUpdate] = useState(false);
     const [loadingDelete, setLoadingDelete] = useState(false);
     const [notification, setNotification] = useState(null);
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isChecking, setIsChecking] = useState(true);
+
+    // Vérification du rôle administrateur
+    useEffect(() => {
+        const checkAdminRole = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const userRole = user?.user_metadata?.role;
+                
+                if (userRole !== 'admin') {
+                    router.push('/');
+                    return;
+                }
+                
+                setIsAuthorized(true);
+            } catch (error) {
+                console.error("Erreur lors de la vérification du rôle:", error);
+                router.push('/');
+            } finally {
+                setIsChecking(false);
+            }
+        };
+
+        checkAdminRole();
+    }, [router]);
 
     const fetchSecteurs = async () => {
         setLoading(true);
@@ -105,10 +133,13 @@ export default function GestionLiaison() {
         }
     };
 
+    // Effet pour récupérer les données uniquement si l'utilisateur est autorisé
     useEffect(() => {
-        fetchLiaisons();
-        fetchSecteurs();
-    }, []);
+        if (isAuthorized) {
+            fetchLiaisons();
+            fetchSecteurs();
+        }
+    }, [isAuthorized]);
 
     const showNotification = (type, message) => {
         setNotification({ type, message });
@@ -268,6 +299,15 @@ export default function GestionLiaison() {
         setSelectedPortArrivee('');
         setDistance('');
     };
+
+    // Si la vérification est en cours ou si l'utilisateur n'est pas autorisé, afficher un chargement
+    if (isChecking || !isAuthorized) {
+        return (
+            <div className="w-full h-screen flex justify-center items-center">
+                <LoadingSpinner text="Vérification des droits d'accès..." />
+            </div>
+        );
+    }
 
     return (
         <div className="pt-16 pb-8 w-9/12 mx-auto">
