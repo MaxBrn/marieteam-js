@@ -4,25 +4,22 @@ import { MdOutlineSupervisorAccount } from "react-icons/md";
 import Cookie from "js-cookie";
 import Link from 'next/link';
 import Notification from './Notification';
+import { supabase } from '@/lib/supabase'; // Assure-toi que Supabase est bien configuré
 
 export default function NavBar() {
-  // État pour savoir si le menu est ouvert ou non
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [token, setToken] = useState(null);  // Retirer le type "string | null"
+  const [token, setToken] = useState(null);
+  const [role, setRole] = useState(null); // Nouveau state pour stocker le rôle de l'utilisateur
   const [notification, setNotification] = useState(null);
+  const menuRef = useRef(null);
 
-  // Référence au menu déroulant pour vérifier si le clic est en dehors
-  const menuRef = useRef(null); // Retirer le type "HTMLDivElement | null"
-
-  // Fonction pour basculer l'état du menu (afficher/masquer)
   const toggleMenu = () => {
     setIsMenuOpen((prevState) => !prevState);
   };
 
-  // Fonction pour fermer le menu si un clic est effectué en dehors
   const handleClickOutside = (event) => {
     if (menuRef.current && !menuRef.current.contains(event.target)) {
-      setIsMenuOpen(false); // Fermer le menu si le clic est à l'extérieur
+      setIsMenuOpen(false);
     }
   };
 
@@ -33,31 +30,31 @@ export default function NavBar() {
     }, 3000);
   };
 
-  // Utilisation de useEffect pour écouter les clics en dehors du menu
   useEffect(() => {
-    // Si le code est exécuté côté client, on récupère le token
     if (typeof window !== "undefined") {
       const tokenFromCookie = Cookie.get("token");
       setToken(tokenFromCookie || null);
+
+      // Récupérer les métadonnées de l'utilisateur
+      const fetchUserRole = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userRole = user?.user_metadata?.role; // Récupère le rôle depuis les métadonnées
+        setRole(userRole); // Stocke le rôle dans l'état
+      };
+
+      if(tokenFromCookie) {
+        fetchUserRole();
+      }
+
+      
     }
 
-    // Ajouter un écouteur d'événements au clic du document
     document.addEventListener("click", handleClickOutside);
 
-    // Nettoyer l'écouteur lors du démontage du composant
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, []); // Effect se déclenche uniquement une fois au montage du composant
-
-  // Utilisation d'un autre useEffect pour mettre à jour l'état du token si le cookie change
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // À chaque changement de cookie, on met à jour le token
-      const tokenFromCookie = Cookie.get("token");
-      setToken(tokenFromCookie || null);
-    }
-  }, [typeof window !== "undefined" && Cookie.get("token")]); // Mettre à jour lorsque le cookie change
+  }, []);
 
   return (
     <nav className="flex bg-blue-50 text-slate-500 py-4 lg:w-9/12 w-full m-auto lg:mt-3 lg:rounded-xl">
@@ -83,6 +80,13 @@ export default function NavBar() {
           <Link href="/listetrajet" className="text-lg">
             Réserver un trajet
           </Link>
+
+          {/* Affiche le bouton "Dashboard" uniquement si l'utilisateur est un admin */}
+          {role === 'admin' && (
+            <Link href="/admin" className="text-lg">
+              Dashboard
+            </Link>
+          )}
 
           <div
             className="relative"
