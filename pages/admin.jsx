@@ -14,8 +14,8 @@ export default function Admin() {
     const [prixTotal, setPrixTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [startDate, setStartDate] = useState(new Date('2025-01-01'));
-    const [endDate, setEndDate] = useState(new Date('2025-01-31'));
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    const [endDate, setEndDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
     const [revenusParDate, setRevenusParDate] = useState({});
     const [passagerParDate, setPassagerParDate] = useState({});
     const [totalPassagers, setTotalPassagers] = useState({ catA: 0, catB: 0, catC: 0 });
