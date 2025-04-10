@@ -3,7 +3,10 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/LoadingSpinner';
-
+import Cookie from "js-cookie";
+import Cookies from "js-cookie";
+import Notification from '@/components/Notification';
+import { useRouter } from 'next/router';
 export default function ListeTrajet() {
   const [trajetList, setTrajetList] = useState([]);
   const [selectedTrajet, setSelectedTrajet] = useState(null);
@@ -18,7 +21,8 @@ export default function ListeTrajet() {
   const [selectedLiaison, setSelectedLiaison] = useState('');
   const [loadingSecteurs, setLoadingSecteurs] = useState(false);
   const [loadingLiaisons, setLoadingLiaisons] = useState(false);
-  
+  const today = new Date().toISOString().split('T')[0];
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSecteurs = async () => {
@@ -289,6 +293,21 @@ export default function ListeTrajet() {
     setSelectedTrajet(trajet);
   };
 
+  const handleReservationClick = (e, trajetNum) => {
+    const tokenFromCookie = Cookies.get("token");
+    
+    // Vérifie si le token est présent
+    if (!tokenFromCookie) {
+      e.preventDefault(); // Empêche le lien de fonctionner immédiatement
+      
+      // Enregistre l'ID du trajet dans les cookies
+      Cookies.set('resTrajet', trajetNum, { expires: 1, path: '/' });
+
+      // Redirige l'utilisateur vers la page de connexion
+      router.push('/connexion');
+    }
+  };
+  
   return (
     <div className="pt-16 pb-8 w-9/12 mx-auto">
       {loadingSecteurs ? (
@@ -334,6 +353,7 @@ export default function ListeTrajet() {
 
           <input
             type="date"
+            min={today}
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition duration-200 ease-in-out"
@@ -397,7 +417,7 @@ export default function ListeTrajet() {
                 </p>
               </div>
               <div className="py-5 w-full border-b-4 border-white">
-                <Link href={`/reservation/${selectedTrajet.num}`} className="p-3 bg-sky-900 rounded-xl text-white w-[80%] m-auto block text-center">
+                <Link href={`/reservation/${selectedTrajet.num}`} onClick={(e) => handleReservationClick(e, selectedTrajet.num)} className="p-3 bg-sky-900 rounded-xl text-white w-[80%] m-auto block text-center">
                   Réserver ce trajet
                 </Link>
               </div>

@@ -16,6 +16,11 @@ export default function Reservation({ trajet }) {
   const [notification, setNotification] = useState(null);
   const router = useRouter();
   
+  const tokenFromCookie = Cookie.get("token");
+  if(!tokenFromCookie) {
+    router.push('/');
+  }
+  
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => {
@@ -29,12 +34,7 @@ export default function Reservation({ trajet }) {
     }, 0);
   };
 
-  const tokenFromCookie = Cookie.get("token");
-  if(!tokenFromCookie) {
-    showNotification("error", "Veuillez vous connecter !");
-    Cookies.set('resTrajet', trajet.num, { expires: 1, path: '/' });
-    router.push('/connexion');
-  }
+  
 
   const [formData, setFormData] = useState({
     nom: '',
