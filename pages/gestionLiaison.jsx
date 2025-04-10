@@ -11,6 +11,16 @@ import { IoMdAdd } from "react-icons/io";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Notification from '@/components/Notification';
 import { useRouter } from 'next/router';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function GestionLiaison() {
     const router = useRouter();
@@ -32,6 +42,8 @@ export default function GestionLiaison() {
     const [notification, setNotification] = useState(null);
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [liaisonToDelete, setLiaisonToDelete] = useState(null);
 
     // Vérification du rôle administrateur
     useEffect(() => {
@@ -266,12 +278,14 @@ export default function GestionLiaison() {
         return liaison;
     }
 
-    async function deleteLiaison(code) {
+    const confirmDelete = async () => {
         setLoadingDelete(true);
+        setShowDeleteDialog(false);
+        
         const { data: trajets, error: errorTrajets } = await supabase
             .from('trajet')
             .select('*')
-            .eq('idLiaison', code);
+            .eq('idLiaison', liaisonToDelete.code);
 
         if (trajets && trajets.length > 0) {
             showNotification("error", "Impossible de supprimer cette liaison : elle est utilisée dans un ou plusieurs trajets");
@@ -282,7 +296,7 @@ export default function GestionLiaison() {
         const { error } = await supabase
             .from('liaison')
             .delete()
-            .eq('code', code);
+            .eq('code', liaisonToDelete.code);
 
         if (error) {
             showNotification("error", `Erreur de suppression : ${error.message}`);
@@ -291,7 +305,13 @@ export default function GestionLiaison() {
             fetchLiaisons();
         }
         setLoadingDelete(false);
-    }
+        setLiaisonToDelete(null);
+    };
+
+    const openDeleteDialog = (liaison) => {
+        setLiaisonToDelete(liaison);
+        setShowDeleteDialog(true);
+    };
 
     const resetForm = () => {
         setSelectedSecteur('');
@@ -412,7 +432,7 @@ export default function GestionLiaison() {
                                 <button onClick={() => handleEdit(liaison)}>
                                     <FaEdit className='text-xl text-blue-600' />
                                 </button>
-                                <button onClick={() => deleteLiaison(liaison.code)}>
+                                <button onClick={() => openDeleteDialog(liaison)}>
                                     <MdDelete className='text-xl text-red-600' />
                                 </button>
                             </div>
@@ -422,6 +442,23 @@ export default function GestionLiaison() {
                     </div>
                 </>
             )}
+
+            {/* AlertDialog pour la confirmation de suppression */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer la liaison {liaisonToDelete?.code} entre {liaisonToDelete?.depart?.nom} et {liaisonToDelete?.arrivee?.nom} ?
+                            <p className="mt-2 text-red-500 font-semibold">Cette action est irréversible.</p>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={confirmDelete}>Supprimer</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

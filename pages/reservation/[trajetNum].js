@@ -8,12 +8,24 @@ import { IoTicket } from "react-icons/io5";
 import { BsTicketDetailed } from "react-icons/bs";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Notification from '@/components/Notification';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Reservation({ trajet }) {
   const [done, setDone] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [reservationData, setReservationData] = useState(null);
   const router = useRouter();
   
   const tokenFromCookie = Cookie.get("token");
@@ -33,8 +45,6 @@ export default function Reservation({ trajet }) {
       return total + formData[key] * tarif;
     }, 0);
   };
-
-  
 
   const [formData, setFormData] = useState({
     nom: '',
@@ -220,22 +230,27 @@ export default function Reservation({ trajet }) {
       return;
     }
 
-    let recap='\nRécapitulatif :\n';
+    let recap='';
     for (let i = 0; i < types.length; i++) {
       if (formData[types[i].key] > 0) {
         recap +=  `${formData[types[i].key]} ${types[i].key} = ${types[i].tarif * formData[types[i].key]} €\n`;
       }
     }
 
-    const confirmation = window.confirm(
-      `Confirmez-vous votre réservation pour un total de ${calculateTotal()} € ?\n`+recap
-    );
+    // Au lieu d'utiliser window.confirm, on affiche notre AlertDialog personnalisé
+    setReservationData({
+      total: calculateTotal(),
+      recap: recap
+    });
+    setShowConfirmDialog(true);
+    setIsSubmitting(false);
+    setLoading(false);
+  };
 
-    if (!confirmation) {
-      setIsSubmitting(false);
-      setLoading(false);
-      return;
-    }
+  const confirmReservation = async () => {
+    setIsSubmitting(true);
+    setLoading(true);
+    setShowConfirmDialog(false);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -530,9 +545,29 @@ export default function Reservation({ trajet }) {
       <div className="w-full flex justify-center items-center min-h-[500px]">
         <LoadingSpinner text="Réservation en cours ..." />
       </div>
-    )
+    )}
 
-    }
+    {/* AlertDialog pour la confirmation de réservation */}
+    <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirmer votre réservation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Confirmez-vous votre réservation pour un total de {reservationData?.total} € ?
+            <div className="mt-2 p-2 bg-gray-100 rounded text-sm">
+              <p className="font-semibold">Récapitulatif :</p>
+              {reservationData?.recap && reservationData.recap.split('\n').map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction className="bg-sky-900 hover:bg-sky-800" onClick={confirmReservation}>Confirmer</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
       
     </>
   );
