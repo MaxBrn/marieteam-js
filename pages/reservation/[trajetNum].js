@@ -174,6 +174,21 @@ export default function Reservation({ trajet }) {
         .select("*")
         .eq("reservation_num", reservation.num);
 
+        const { data: periode, error: periodeError } = await supabase
+          .from('periode')
+          .select('id')
+          .lte('dateDeb', trajet.date)  // dateDeb <= trajet.date
+          .gte('dateFin', trajet.date)  // dateFin >= trajet.date
+          .single();
+
+        if (periodeError || !periode) {
+          console.error("Erreur lors de la récupération de la période:", periodeError);
+          // Vous pouvez soit retourner une erreur, soit utiliser une période par défaut
+          return {
+            notFound: true,
+          };
+        }
+
       const detailedSeats = await Promise.all(
         placesReserves.map(async (place) => {
           const { data: seatType } = await supabase
@@ -181,12 +196,14 @@ export default function Reservation({ trajet }) {
             .select("*")
             .eq("num", place.type_num)
             .single();
+            
 
           const { data: seatPrice } = await supabase
             .from("tarifer")
             .select("*")
             .eq("liaison_code", liaison.code)
             .eq("type", place.type_num)
+            .eq("idPeriode",periode.id)
             .single();
 
           const totalPrice = seatPrice.tarif * place.quantite;
@@ -679,11 +696,42 @@ export async function getServerSideProps(context) {
     .eq('idPlace', 'C')
     .single();
 
-  const {data: prix } = await supabase 
+  console.log(trajet.date);
+
+  // Déterminer la période pour ce trajet
+  const { data: periode, error: periodeError } = await supabase
+    .from('periode')
+    .select('id')
+    .lte('dateDeb', trajet.date)  // dateDeb <= trajet.date
+    .gte('dateFin', trajet.date)  // dateFin >= trajet.date
+    .single();
+
+  if (periodeError || !periode) {
+    console.error("Erreur lors de la récupération de la période:", periodeError);
+    // Vous pouvez soit retourner une erreur, soit utiliser une période par défaut
+    return {
+      notFound: true,
+    };
+  }
+
+  console.log("Période trouvée:", periode);
+
+  // Récupérer les tarifs en fonction de la période
+  const { data: prix, error: prixError } = await supabase 
     .from('tarifer')
-    .select('tarif')
-    .eq('liaison_code',liaison.code)
-    .order('type', {ascending: true});
+    .select('tarif, type')
+    .eq('liaison_code', liaison.code)
+    .eq('idPeriode', periode.id) // Note: vérifiez que le champ s'appelle bien 'periode_id' dans votre table
+    .order('type', { ascending: true });
+
+  if (prixError) {
+    console.error("Erreur lors de la récupération des tarifs:", prixError);
+    return {
+      notFound: true,
+    };
+  }
+
+  console.log("Tarifs trouvés:", prix);
 
   const heureDepartFormat = trajet.heureDepart.substring(0,2)+'h'+trajet.heureDepart.substring(3,5);
   const heureArriveeFormat = trajet.heureArrivee.substring(0,2)+'h'+trajet.heureArrivee.substring(3,5);

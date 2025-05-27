@@ -73,6 +73,21 @@ const Compte = () => {
             .select("*")
             .eq("reservation_num", res.num);
 
+            const { data: periode, error: periodeError } = await supabase
+              .from('periode')
+              .select('id')
+              .lte('dateDeb', trajet.date)  // dateDeb <= trajet.date
+              .gte('dateFin', trajet.date)  // dateFin >= trajet.date
+              .single();
+
+            if (periodeError || !periode) {
+              console.error("Erreur lors de la récupération de la période:", periodeError);
+              // Vous pouvez soit retourner une erreur, soit utiliser une période par défaut
+              return {
+                notFound: true,
+              };
+            }
+
           const detailedSeats = await Promise.all(
             placesReserves.map(async (place) => {
               const { data: seatType } = await supabase
@@ -86,6 +101,7 @@ const Compte = () => {
                 .select("*")
                 .eq("liaison_code", liaison.code)
                 .eq("type", place.type_num)
+                .eq('idPeriode', periode.id)
                 .single();
 
               const totalPrice = seatPrice.tarif * place.quantite;

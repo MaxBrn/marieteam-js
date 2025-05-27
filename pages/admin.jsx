@@ -81,7 +81,8 @@ export default function Admin() {
                     date,
                     idTrajet,
                     trajet:trajet (
-                        idLiaison
+                        idLiaison,
+                        date
                     ),
                     enregistrer (
                         quantite,
@@ -113,23 +114,42 @@ export default function Admin() {
 
             if (errorTrajets) throw errorTrajets;
 
-            // Récupérer tous les tarifs en une seule fois
-            const { data: tarifs, error: errorTarifs } = await supabase
-                .from('tarifer')
-                .select('*');
-
-            if (errorTarifs) throw errorTarifs;
-
-            // Créer un map des tarifs pour un accès rapide
-            const tarifsMap = {};
-            tarifs.forEach(tarif => {
-                tarifsMap[`${tarif.liaison_code}-${tarif.type}`] = tarif.tarif;
-            });
+            
 
             // Traiter les revenus
             for (const reservation of reservationsData) {
                 let montantTotal = 0;
                 
+                const { data: periode, error: periodeError } = await supabase
+                    .from('periode')
+                    .select('id')
+                    .lte('dateDeb', reservation.trajet.date)  // dateDeb <= trajet.date
+                    .gte('dateFin', reservation.trajet.date)  // dateFin >= trajet.date
+                    .single();
+
+                    if (periodeError || !periode) {
+                    console.error("Erreur lors de la récupération de la période:", periodeError);
+                    // Vous pouvez soit retourner une erreur, soit utiliser une période par défaut
+                    return {
+                        notFound: true,
+                    };
+                }
+
+                // Récupérer tous les tarifs en une seule fois
+                const { data: tarifs, error: errorTarifs } = await supabase
+                    .from('tarifer')
+                    .select('*')
+                    .eq("idPeriode",periode.id);
+
+                if (errorTarifs) throw errorTarifs;
+
+                // Créer un map des tarifs pour un accès rapide
+                const tarifsMap = {};
+                tarifs.forEach(tarif => {
+                    tarifsMap[`${tarif.liaison_code}-${tarif.type}`] = tarif.tarif;
+                });
+
+
                 for (const enregistrement of reservation.enregistrer) {
                     const tarifKey = `${reservation.trajet.idLiaison}-${enregistrement.type_num}`;
                     const tarif = tarifsMap[tarifKey];
